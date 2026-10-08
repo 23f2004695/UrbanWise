@@ -163,6 +163,10 @@ onBeforeUnmount(() => {
         A simplified estimate: these are <strong>likely</strong> contributing sources, not exact shares. Satellite
         fires are heat detections — in Oct–Nov in Punjab and Haryana mostly crop-residue burning.
       </p>
+      <p>
+        This uses one weather model. When we checked it against NOAA HYSPLIT, a different weather model often named
+        different fires, so treat the districts as a rough guide.
+      </p>
     </InfoToggle>
   </section>
 </template>

@@ -58,6 +58,8 @@ Fires are named by the nearest district (from a list of 92 in North India and Pa
 
 The same engine run forwards. We group fires from the last 36 hours into cells of 0.5° and keep the 8 with the most fire radiative power. From the centre of each group we run a 48-hour forward trajectory on forecast winds. If the path comes within the same growing distance of the city, the time it first does so is the arrival time. Fires within 30 km of the city count as local, not incoming.
 
+**Second weather model.** We run the same thing on GFS winds as well. If both bring smoke, the app says the two models agree and shows when GFS has it arriving. If only one does, it says they disagree. If GFS can't be fetched, the alert is shown without this check.
+
 **Assumptions and limits.**
 - It assumes the fires keep burning. Most crop fires burn for hours, not days, so a single burst may not last long enough to arrive.
 - Forecast winds get less reliable further ahead. An arrival 40 hours out is much less certain than one 10 hours out.

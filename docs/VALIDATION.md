@@ -59,6 +59,11 @@ The alert held up: all three said smoke from the same fires, within 11 hours of 
 2. **The weather model matters more than our method.** Two good forecasts can send the air in opposite directions. A single trajectory should never be shown as certain.
 3. **Treat the Smoke Trail's district names as a rough guide only**, not as "these fires caused your air".
 
+## What we changed
+
+- The Incoming Smoke Alert now also runs on a second weather model (GFS) and shows "2 models agree" or "models disagree". It also shows when the second model has the smoke arriving.
+- The Smoke Trail now says it's based on one weather model and that its district names are a rough guide.
+
 ## Reproduce it
 
 1. Run a HYSPLIT back-trajectory on the [READY site](https://www.ready.noaa.gov/HYSPLIT_traj.php) with the settings above and save the "trajectory endpoints" text file as `docs/validation/hysplit_<city>.txt`. The three files we used are in that folder.

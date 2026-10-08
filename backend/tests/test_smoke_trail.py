@@ -229,3 +229,57 @@ def test_forecast_endpoint(monkeypatch):
     client = app_module.app.test_client()
     assert client.get("/api/smoke-forecast?lat=28.6&lon=77.2").get_json() == {"alert": {"incoming": False}}
     assert client.get("/api/smoke-forecast").status_code == 400
+
+
+# ---------- second weather model ----------
+
+def test_models_agree_on_incoming_smoke_and_give_a_range():
+    main = {"incoming": True, "first_arrival_h": 30, "fires": 27, "districts": ["Phalodi"]}
+    gfs = {"incoming": True, "first_arrival_h": 21, "fires": 27, "districts": ["Phalodi"]}
+    models = st.model_agreement(main, gfs)
+    assert models["agree"] is True
+    assert models["arrival_range_h"] == [21, 30]
+
+
+def test_models_disagree_when_only_one_brings_smoke():
+    main = {"incoming": True, "first_arrival_h": 30, "fires": 27, "districts": ["Phalodi"]}
+    gfs = {"incoming": False, "first_arrival_h": None, "fires": 0, "districts": []}
+    models = st.model_agreement(main, gfs)
+    assert models["agree"] is False
+    assert models["arrival_range_h"] is None
+    assert models["second"]["incoming"] is False
+
+
+def test_models_agree_on_no_smoke():
+    none = {"incoming": False, "first_arrival_h": None, "fires": 0, "districts": []}
+    models = st.model_agreement(none, dict(none))
+    assert models["agree"] is True and models["arrival_range_h"] is None
+
+
+def _forecast_with(monkeypatch, grids):
+    def fake_grid(la, lo, model=None):
+        grid = grids[model]
+        if isinstance(grid, Exception):
+            raise grid
+        return grid
+    monkeypatch.setattr(st, "_fetch_wind_grid", fake_grid)
+    monkeypatch.setattr(st, "_fetch_fires", lambda: [fire(30.25, 75.84, 4, 8)])
+    return st.get_smoke_forecast(*DELHI, now=NOW)
+
+
+def test_forecast_reports_disagreement_between_models(monkeypatch):
+    body = _forecast_with(monkeypatch, {
+        None: constant_grid(14, 324, future=48),               # brings Punjab smoke to Delhi
+        st.SECOND_MODEL: constant_grid(14, 135, future=48),    # blows it away
+    })
+    assert body["alert"]["incoming"] is True
+    assert body["alert"]["models"]["agree"] is False
+
+
+def test_forecast_still_works_if_second_model_fails(monkeypatch):
+    body = _forecast_with(monkeypatch, {
+        None: constant_grid(14, 324, future=48),
+        st.SECOND_MODEL: st.UpstreamError("503"),
+    })
+    assert body["alert"]["incoming"] is True
+    assert body["alert"]["models"] == {"checked": 1, "agree": None, "second": None, "arrival_range_h": None}

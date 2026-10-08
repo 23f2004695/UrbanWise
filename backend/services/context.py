@@ -65,7 +65,9 @@ def city_context(lat, lon, place_name, slots):
             "hours_from_now": alert["first_arrival_h"],
             "from_fires": alert["fires"],
             "source_districts": alert["districts"],
-            "note": "Forward trajectories from current fires on forecast winds; likely, not certain.",
+            "weather_models_agree": alert.get("models", {}).get("agree"),
+            "note": "Forward trajectories from current fires on forecast winds; may, not certain. "
+                    "If weather_models_agree is false, say the forecast is uncertain.",
         }
     except Exception:  # optional data: never let it break the answer
         incoming = "unavailable right now"

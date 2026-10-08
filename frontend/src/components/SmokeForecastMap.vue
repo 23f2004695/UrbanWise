@@ -7,7 +7,7 @@ import Icon3D from './Icon3D.vue'
 import InfoToggle from './InfoToggle.vue'
 import { formatInZone } from '../lib/aqi'
 import { escapeHtml } from '../lib/html'
-import { forecastHeadline, localFiresNote } from '../lib/smokeForecast'
+import { forecastHeadline, localFiresNote, modelsCheck } from '../lib/smokeForecast'
 
 const props = defineProps({
   place: { type: Object, required: true },
@@ -24,6 +24,7 @@ let layers = null
 
 const incoming = computed(() => props.data?.alert.incoming)
 const headline = computed(() => forecastHeadline(props.data, props.place.name, props.timeZone))
+const models = computed(() => modelsCheck(props.data))
 const localNote = computed(() => localFiresNote(props.data))
 const HOT = '#E8590C'
 const COLD = '#9AA4B8'
@@ -110,6 +111,10 @@ onBeforeUnmount(() => map?.remove())
 
     <div v-if="data" class="summary" :class="{ incoming }" aria-live="polite">
       <p class="headline">{{ headline }}</p>
+      <p v-if="models" class="models small">
+        <span class="tag-models" :class="{ disagree: !models.agree }">{{ models.chip }}</span>
+        {{ models.sentence }}
+      </p>
     </div>
     <p v-else-if="loading" class="muted">Running today's fires forward on the forecast winds…</p>
 
@@ -124,6 +129,8 @@ onBeforeUnmount(() => map?.remove())
       <p>
         UrbanWise groups fires seen by NASA satellites (FIRMS VIIRS) in the last 36 hours and carries their smoke
         forward on forecast winds ~750 m up (Open-Meteo) for 48 hours. It assumes the fires keep burning.
+        The same check is run on a second weather model (GFS), because in our test against NOAA HYSPLIT
+        two models sometimes sent the air in very different directions.
       </p>
       <p>A model estimate: smoke <strong>may</strong> arrive, and forecasts can change. Hover a fire cluster for its arrival time.</p>
       <p v-if="localNote">{{ localNote }}</p>
@@ -144,6 +151,8 @@ onBeforeUnmount(() => map?.remove())
 .summary p { margin: 0 0 4px; }
 
 .headline { font-size: 1.08rem; font-weight: 700; }
+
+.models .tag-models { margin: 0 4px 0 0; }
 
 .map { height: 440px; border-radius: 12px; border: 1px solid var(--border); z-index: 0; }
 

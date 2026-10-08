@@ -194,3 +194,21 @@ body::after {
   text-transform: uppercase;
   cursor: help;
 }
+
+/* Whether a second weather model backs up the smoke alert. */
+.tag-models {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: help;
+  background: #E6F4EA;
+  color: #137333;
+}
+
+.tag-models.disagree { background: #FEF3C7; color: #8A4B00; }
