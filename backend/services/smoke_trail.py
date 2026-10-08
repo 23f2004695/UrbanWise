@@ -19,6 +19,7 @@ import requests
 from cachetools import TTLCache, cached
 
 from services.air import UpstreamError
+from services.lastgood import keep_last_good, stale_info
 
 WIND_URL = "https://api.open-meteo.com/v1/forecast"
 # NASA FIRMS public 48 h file for South Asia (VIIRS on Suomi NPP). No key needed.
@@ -120,6 +121,7 @@ SECOND_MODEL = "gfs_seamless"
 
 
 @cached(_wind_cache, condition=threading.Condition())
+@keep_last_good("Open-Meteo wind", (UpstreamError,), maxsize=200)
 def _fetch_wind_grid(center_lat, center_lon, model=None):
     """model=None is Open-Meteo's default "best match" for the location."""
     lats, lons = _grid_axis(center_lat), _grid_axis(center_lon)
@@ -193,6 +195,7 @@ def parse_fires(text):
 
 
 @cached(_fire_cache, condition=threading.Condition())
+@keep_last_good("NASA FIRMS", (UpstreamError,), maxsize=1)
 def _fetch_fires():
     try:
         res = requests.get(FIRES_URL, timeout=15)
@@ -286,6 +289,7 @@ def get_smoke_trail(lat, lon, now=None):
 
     return {
         "generated_at": now.isoformat(),
+        "stale": stale_info(grid, fires),
         "trail": [list(p) for p in path],
         "fires": [
             {
@@ -431,6 +435,7 @@ def get_smoke_forecast(lat, lon, now=None):
     result["alert"]["models"] = model_agreement(result["alert"], second)
     return {
         "generated_at": now.isoformat(),
+        "stale": stale_info(grid, fires),
         **result,
         "method": "Forward trajectories from today's fire clusters using forecast winds ~750 m up "
                   "(Open-Meteo), checked against a second weather model (GFS). "

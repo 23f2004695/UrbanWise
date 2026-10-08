@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 from services.air import UpstreamError, _fetch_air, _hourly, _series
+from services.lastgood import stale_info
 from services.smoke_trail import _fetch_fires, _fetch_wind_grid
 from services.snapshot import CITIES
 
@@ -99,4 +100,5 @@ def get_radar(lat, lon, now=None):
     frames = [(start + timedelta(hours=k)).strftime("%Y-%m-%dT%H:00") for k in range(PAST_H + FUTURE_H + 1)]
     with ThreadPoolExecutor(max_workers=len(CITIES)) as pool:
         cities = [c for c in pool.map(lambda e: _city_series(e, frames), CITIES) if c]
-    return build_radar(grid, _fetch_fires(), cities, now)
+    fires = _fetch_fires()
+    return {**build_radar(grid, fires, cities, now), "stale": stale_info(grid, fires)}

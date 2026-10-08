@@ -28,17 +28,33 @@ LIMITS = {
     "circular": RateLimiter(6, 60),
     "speak": RateLimiter(10, 60),
 }
+# And for everyone together, so the daily quota survives even if someone
+# finds a way round the per-visitor limit.
+TOTAL_LIMITS = {
+    "chat": RateLimiter(200, 3600),
+    "circular": RateLimiter(100, 3600),
+    "speak": RateLimiter(150, 3600),
+}
+
+# How many proxies in front of the app add themselves to X-Forwarded-For
+# (0 locally; set on deploy). Anything further left was sent by the visitor
+# and can be faked, so it's never used.
+TRUSTED_PROXIES = int(os.getenv("TRUSTED_PROXIES") or 0)
 
 
 def _client_id():
-    # Behind CloudFront/API Gateway the real client is the first forwarded address.
-    forwarded = request.headers.get("X-Forwarded-For", "")
-    return forwarded.split(",")[0].strip() or request.remote_addr or "unknown"
+    if TRUSTED_PROXIES:
+        hops = [h.strip() for h in request.headers.get("X-Forwarded-For", "").split(",") if h.strip()]
+        if len(hops) >= TRUSTED_PROXIES:
+            return hops[-TRUSTED_PROXIES]
+    return request.remote_addr or "unknown"
 
 
 def _rate_limit(name):
     if not LIMITS[name].allow(_client_id()):
         return jsonify(error="Too many requests. Please wait a minute and try again."), 429
+    if not TOTAL_LIMITS[name].allow("everyone"):
+        return jsonify(error="UrbanWise is busy right now. Please try again in a few minutes."), 429
     return None
 
 
@@ -225,4 +241,5 @@ def geocode():
 
 
 if __name__ == "__main__":
-    app.run(port=int(os.getenv("PORT", 5050)), debug=True)
+    # Debug mode runs code from the browser, so it's opt-in (FLASK_DEBUG=1).
+    app.run(port=int(os.getenv("PORT", 5050)), debug=os.getenv("FLASK_DEBUG") == "1")
