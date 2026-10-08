@@ -11,6 +11,7 @@ import json
 import math
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -112,8 +113,15 @@ def _get_json_with_retry(url, params, label, attempts=2):
     raise UpstreamError(f"{label} request failed")
 
 
+# Second weather model for the Incoming Smoke Alert. Our check against NOAA
+# HYSPLIT (docs/VALIDATION.md) showed two models can send air in very
+# different directions, so the alert says whether they agree.
+SECOND_MODEL = "gfs_seamless"
+
+
 @cached(_wind_cache, condition=threading.Condition())
-def _fetch_wind_grid(center_lat, center_lon):
+def _fetch_wind_grid(center_lat, center_lon, model=None):
+    """model=None is Open-Meteo's default "best match" for the location."""
     lats, lons = _grid_axis(center_lat), _grid_axis(center_lon)
     points = [(la, lo) for la in lats for lo in lons]
     params = {
@@ -125,6 +133,8 @@ def _fetch_wind_grid(center_lat, center_lon):
         "past_days": 2,
         "forecast_days": 3,  # future hours for the Incoming Smoke Alert
     }
+    if model:
+        params["models"] = model
     body = _get_json_with_retry(WIND_URL, params, "Open-Meteo wind")
     if not isinstance(body, list) or len(body) != len(points):
         raise UpstreamError("Unexpected wind grid response")
@@ -389,13 +399,40 @@ def smoke_forecast(lat, lon, grid, fires, now, districts=None):
     return {"clusters": results, "alert": alert, "local_fires": local}
 
 
+def model_agreement(alert, second):
+    """Compare the main alert with the same alert on a second weather model.
+
+    second is None when the second model couldn't be fetched (agree = None).
+    """
+    if second is None:
+        return {"checked": 1, "agree": None, "second": None, "arrival_range_h": None}
+    agree = alert["incoming"] == second["incoming"]
+    hours = [a["first_arrival_h"] for a in (alert, second) if a["incoming"]]
+    return {
+        "checked": 2,
+        "agree": agree,
+        "second": {k: second[k] for k in ("incoming", "first_arrival_h", "fires", "districts")},
+        "arrival_range_h": [min(hours), max(hours)] if agree and hours else None,
+    }
+
+
 def get_smoke_forecast(lat, lon, now=None):
     now = (now or datetime.now(timezone.utc)).replace(minute=0, second=0, microsecond=0)
-    grid = _fetch_wind_grid(float(round(lat)), float(round(lon)))
-    result = smoke_forecast(lat, lon, grid, _fetch_fires(), now)
+    center = (float(round(lat)), float(round(lon)))
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        second_job = pool.submit(_fetch_wind_grid, *center, SECOND_MODEL)
+        grid = _fetch_wind_grid(*center)
+        fires = _fetch_fires()
+        result = smoke_forecast(lat, lon, grid, fires, now)
+        try:
+            second = smoke_forecast(lat, lon, second_job.result(), fires, now)["alert"]
+        except Exception:  # the second opinion is optional; never fail the alert over it
+            second = None
+    result["alert"]["models"] = model_agreement(result["alert"], second)
     return {
         "generated_at": now.isoformat(),
         **result,
         "method": "Forward trajectories from today's fire clusters using forecast winds ~750 m up "
-                  "(Open-Meteo). Shows smoke that may arrive (model estimate), not a guarantee.",
+                  "(Open-Meteo), checked against a second weather model (GFS). "
+                  "Shows smoke that may arrive (model estimate), not a guarantee.",
     }

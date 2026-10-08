@@ -76,7 +76,7 @@ We try to be clear about what is measured and what is estimated:
 | GRAP stage | CAQM Graded Response Action Plan | Shown only for Delhi-NCR (approx. within 130 km of Delhi) |
 | Notices / assistant wording | Google Gemini | Wording only; all numbers come from the data above |
 
-UrbanWise gives estimates for planning, not medical advice.
+UrbanWise gives estimates for planning, not medical advice. The full method, assumptions and limits are in [docs/METHODS.md](docs/METHODS.md), and the trajectory check against NOAA HYSPLIT is in [docs/VALIDATION.md](docs/VALIDATION.md).
 
 ---
 
@@ -127,14 +127,14 @@ backend/
   app.py              API routes
   services/           air quality, School Mode, smoke trail/forecast/radar, AI
   data/districts.json district names for labelling fires
-  scripts/            tool used to build the district list
+  scripts/            district list builder and the HYSPLIT comparison
   tests/
 frontend/
   src/pages/          landing page and dashboard
   src/components/     cards, maps, radar, 3D scene
   src/lib/            calculations and helpers (with tests)
   public/3d/          3D icons
-docs/screenshots/     images used in this README
+docs/                methods, validation and screenshots
 ```
 
 ---

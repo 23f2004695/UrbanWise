@@ -23,3 +23,27 @@ export function localFiresNote(data) {
   if (!n) return ''
   return `${n} fire${n === 1 ? ' was' : 's were'} also detected within 30 km of the city in the last 36 hours.`
 }
+
+/**
+ * Whether a second weather model (GFS) agrees with the alert.
+ * Returns null when there was no second model to compare with.
+ */
+export function modelsCheck(data) {
+  const m = data?.alert?.models
+  if (!m || m.agree == null) return null
+  const s = m.second
+  if (m.agree) {
+    const sentence = !data.alert.incoming
+      ? 'A second weather model (GFS) agrees.'
+      : s.first_arrival_h === data.alert.first_arrival_h
+        ? 'A second weather model (GFS) brings this smoke at about the same time.'
+        : `A second weather model (GFS) also brings this smoke, in about ${s.first_arrival_h} h.`
+    return { agree: true, chip: '2 models agree', sentence }
+  }
+  const sentence = data.alert.incoming
+    ? "A second weather model (GFS) doesn't bring this smoke here, so treat it as uncertain."
+    : `A second weather model (GFS) shows smoke from ${s.fires} fire${s.fires === 1 ? '' : 's'}`
+      + `${s.districts.length ? ` near ${joinNames(s.districts.slice(0, 3))}` : ''}`
+      + ` may arrive in about ${s.first_arrival_h} h, so keep an eye on it.`
+  return { agree: false, chip: 'Models disagree', sentence }
+}

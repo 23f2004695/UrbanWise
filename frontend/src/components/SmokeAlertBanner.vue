@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import Icon3D from './Icon3D.vue'
-import { forecastHeadline } from '../lib/smokeForecast'
+import { forecastHeadline, modelsCheck } from '../lib/smokeForecast'
 
 const props = defineProps({
   data: { type: Object, default: null },
@@ -14,6 +14,7 @@ const props = defineProps({
 
 const incoming = computed(() => props.data?.alert.incoming)
 const text = computed(() => forecastHeadline(props.data, props.place.name, props.timeZone))
+const models = computed(() => modelsCheck(props.data))
 </script>
 
 <template>
@@ -23,6 +24,7 @@ const text = computed(() => forecastHeadline(props.data, props.place.name, props
       <p class="label">
         {{ incoming ? 'Incoming smoke' : 'Smoke outlook · next 48 h' }}
         <span class="tag-estimate" title="Model estimate from forecast winds">estimate</span>
+        <span v-if="models" class="tag-models" :class="{ disagree: !models.agree }" :title="models.sentence">{{ models.chip }}</span>
       </p>
       <p class="text">{{ text }}</p>
     </div>
