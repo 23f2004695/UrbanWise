@@ -1,0 +1,196 @@
+:root {
+  --bg: #F5F7FC;
+  --surface: #FFFFFF;
+  --surface-2: #EEF2FA;
+  --text: #17213A;
+  --muted: #5A6478;
+  --border: #DFE5F0;
+  --brand: #22357A;       /* navy, matches the 3D scene */
+  --brand-2: #3A5BB5;
+  --accent: #F26A1B;      /* orange, for fills and highlights */
+  --accent-ink: #B54708;  /* orange dark enough for small text on white */
+  --focus: #2F6FED;
+  --radius: 18px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 16px rgba(16, 24, 40, 0.06);
+  color-scheme: light only;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.muted { color: var(--muted); }
+
+.small { font-size: 0.875rem; }
+
+/* ---------- 3D look & motion ---------- */
+
+/* Soft colour blobs drifting behind the dashboard. */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.35;
+  pointer-events: none;
+  animation: drift 26s ease-in-out infinite alternate;
+}
+
+body::before {
+  top: -14vmax;
+  left: -10vmax;
+  background: radial-gradient(circle, #8EC5FF, transparent 65%);
+}
+
+body::after {
+  bottom: -16vmax;
+  right: -12vmax;
+  background: radial-gradient(circle, #FFB38A, transparent 65%);
+  animation-delay: -13s;
+}
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(6vmax, 4vmax) scale(1.12); }
+}
+
+/* Cards rise in one after another, and lift a little on hover. */
+.card {
+  /* "backwards" so the finished animation doesn't override the hover lift. */
+  animation: card-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06), 0 14px 32px rgba(16, 24, 40, 0.12);
+}
+
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Stagger: each row of the dashboard arrives a moment after the previous one. */
+.layout > :nth-child(2), .layout > :nth-child(2) .card { animation-delay: 0.08s; }
+.layout > :nth-child(3), .layout > :nth-child(3) .card { animation-delay: 0.16s; }
+.layout > :nth-child(4), .layout > :nth-child(4) .card { animation-delay: 0.24s; }
+.layout > :nth-child(5), .layout > :nth-child(5) .card { animation-delay: 0.32s; }
+.layout > :nth-child(6), .layout > :nth-child(6) .card { animation-delay: 0.40s; }
+.stack > .card + .card, .pair > .card + .card { animation-delay: 0.3s; }
+
+/* Card heading with a floating 3D icon. */
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Icons sit on a soft clay tile so white ones (fog, speech) stand out. */
+.card-head > .icon3d {
+  box-sizing: content-box;
+  padding: 7px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #F3F6FF, #DDE5F5);
+  box-shadow:
+    inset 2px 2px 3px rgba(255, 255, 255, 0.9),
+    inset -3px -4px 8px rgba(70, 90, 140, 0.16),
+    0 6px 14px -4px rgba(16, 24, 40, 0.22);
+  filter: none;
+}
+
+.card-head h2 { margin: 0; }
+
+.card-head p { margin: 2px 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after, .card { animation: none; }
+  .card, .card:hover { transition: none; transform: none; }
+}
+
+/* Page and section transitions. Pages only fade: a transform on the page
+   would make its position:fixed tab bar jump off-screen mid-transition. */
+.page-enter-active, .page-leave-active { transition: opacity 0.25s ease; }
+.page-enter-from, .page-leave-to { opacity: 0; }
+
+.section-enter-active, .section-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.section-enter-from { opacity: 0; transform: translateX(12px); }
+.section-leave-to { opacity: 0; transform: translateX(-8px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active, .page-leave-active, .section-enter-active, .section-leave-active { transition: none; }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover { transform: translateY(-2px); }
+
+.btn-primary {
+  background: linear-gradient(180deg, #2C4596, var(--brand));
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(34, 53, 122, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.btn-accent {
+  background: linear-gradient(180deg, #FF8A3D, var(--accent));
+  color: #2B1200;
+  box-shadow: 0 8px 18px -8px rgba(242, 106, 27, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.btn-ghost { background: var(--surface); color: var(--brand); border: 1px solid var(--border); }
+
+/* Small "estimate" tag: keeps the honesty visible without a sentence. */
+.tag-estimate {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: help;
+}
