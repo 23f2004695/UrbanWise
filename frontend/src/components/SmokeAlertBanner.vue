@@ -64,6 +64,9 @@ const text = computed(() => forecastHeadline(props.data, props.place.name, props
 
 @media (max-width: 560px) {
   .banner { flex-wrap: wrap; }
+  /* Take the full row next to the icon, so "See forecast" wraps below
+     instead of squeezing the text into a narrow column. */
+  .body { flex-basis: calc(100% - 52px); }
   .see { margin-left: 52px; }
 }
 </style>
