@@ -18,6 +18,7 @@ import VentilationCard from '../components/VentilationCard.vue'
 import { useCity } from '../composables/useCity'
 import { formatHour, grapStage, inDelhiNcr, relativeHour } from '../lib/aqi'
 import { daySummary } from '../lib/school'
+import { staleNote } from '../lib/stale'
 import { trailHeadline } from '../lib/smokeTrail'
 import { SECTIONS } from '../router'
 
@@ -60,6 +61,9 @@ watch(() => route.query, (q) => {
   const fromUrl = placeFromQuery(q)
   if (fromUrl && (fromUrl.lat !== place.value.lat || fromUrl.lon !== place.value.lon)) city.selectPlace(fromUrl)
 })
+
+// Shown when the backend served its last good copy because a provider was busy.
+const stale = computed(() => staleNote(air.value, trail.data.value, forecast.data.value))
 
 // GRAP is a Delhi-NCR scheme: only show stages for cities in (approximate) NCR.
 const grapApplies = computed(() => inDelhiNcr(place.value.lat, place.value.lon))
@@ -148,6 +152,8 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
         </div>
         <CitySearch @select="selectPlace" />
       </header>
+
+      <p v-if="stale" class="card stale-note" role="status">{{ stale }}</p>
 
       <div v-if="city.airError.value" class="card error" role="alert">
         <strong>Couldn't load air quality for {{ place.name }}.</strong>
@@ -552,4 +558,5 @@ nav { display: grid; gap: 6px; }
 @media (max-width: 480px) {
   .tiles { grid-template-columns: minmax(0, 1fr); }
 }
+.stale-note { margin: 0; padding: 10px 16px; border-color: #E8C48A; background: #FFF7E0; font-size: 0.9rem; }
 </style>

@@ -7,6 +7,7 @@ import requests
 from cachetools import TTLCache, cached
 
 from services.advisory import advice, category, cpcb_aqi
+from services.lastgood import keep_last_good, stale_info
 
 AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -31,6 +32,7 @@ class UpstreamError(Exception):
 # condition= makes the cache thread-safe and lets parallel callers for the same
 # key wait for one request instead of each fetching it.
 @cached(_air_cache, condition=threading.Condition())
+@keep_last_good("Open-Meteo air quality", (UpstreamError,))
 def _fetch_air(lat, lon):
     params = {
         "latitude": lat,
@@ -147,7 +149,11 @@ def get_school_hours(lat, lon):
 
 def get_air(lat, lon):
     # Round so nearby requests share a cache entry (~1 km).
-    return build_air_report(_fetch_air(round(lat, 2), round(lon, 2)))
+    raw = _fetch_air(round(lat, 2), round(lon, 2))
+    report = build_air_report(raw)
+    if stale := stale_info(raw):
+        report["stale"] = stale
+    return report
 
 
 @cached(_geo_cache, condition=threading.Condition())
