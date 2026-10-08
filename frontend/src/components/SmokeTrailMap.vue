@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { escapeHtml } from '../lib/html'
 import { fireRadius, trailDetail, trailHeadline } from '../lib/smokeTrail'
 import Icon3D from './Icon3D.vue'
 
@@ -59,16 +60,16 @@ function draw() {
   }
 
   for (const f of fires) {
-    const where = f.district ? `${f.district}, ${f.state}` : 'Outside mapped districts'
+    const where = f.district ? `${escapeHtml(f.district)}, ${escapeHtml(f.state)}` : 'Outside mapped districts'
     L.circleMarker([f.lat, f.lon], {
       radius: fireRadius(f.frp), color: '#FFFFFF', weight: 1, fillColor: FIRE_COLOUR, fillOpacity: 0.9,
-    }).bindTooltip(`<strong>Fire</strong> · ${where}<br>Detected ~${f.hours_ago} h ago · intensity ${f.frp} MW`)
+    }).bindTooltip(`<strong>Fire</strong> · ${where}<br>Detected ~${escapeHtml(f.hours_ago)} h ago · intensity ${escapeHtml(f.frp)} MW`)
       .addTo(layers)
   }
 
   L.circleMarker([trail[0][0], trail[0][1]], {
     radius: 8, color: '#FFFFFF', weight: 3, fillColor: TRAIL_COLOUR, fillOpacity: 1,
-  }).bindTooltip(props.place.name, { permanent: true, direction: 'right', className: 'trail-label city' })
+  }).bindTooltip(escapeHtml(props.place.name), { permanent: true, direction: 'right', className: 'trail-label city' })
     .addTo(layers)
 
   const bounds = L.latLngBounds(trail.map(([lat, lon]) => [lat, lon]))
@@ -119,7 +120,7 @@ onBeforeUnmount(() => {
         <Icon3D name="fire" :size="48" :delay="0.9" />
         <div>
         <h2 id="trail-title">Smoke Trail</h2>
-        <p class="muted small">Where the air you're breathing came from over the last 48 hours, and the farm and forest fires it passed.</p>
+        <p class="muted small">Where the air you're breathing came from over the last 48 hours, and the satellite-detected fires it likely passed.</p>
         </div>
       </div>
       <button v-if="data && !loading" type="button" class="replay" @click="draw">Replay</button>

@@ -7,6 +7,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Icon3D from './Icon3D.vue'
 import { aqiCategory, categoryStyle, formatInZone } from '../lib/aqi'
+import { escapeHtml } from '../lib/html'
+import { replayDate } from '../lib/replay'
 import { advect, gridBounds, windAt } from '../lib/radar'
 
 const props = defineProps({
@@ -47,7 +49,7 @@ const clock = computed(() => (frames.value.length ? formatInZone(`${frames.value
 const phase = computed(() => {
   if (!frames.value.length) return ''
   const d = frameIndex.value - nowIndex.value
-  if (d === 0) return 'Now'
+  if (d === 0) return replayDate.value ? 'Snapshot time' : 'Now'
   return d < 0 ? `${-d} h ago` : `Forecast · in ${d} h`
 })
 const firesSeen = computed(() => (radar.value?.fires || []).filter((f) => f.t <= frame.value).length)
@@ -64,7 +66,9 @@ async function load() {
   cityLayer?.clearLayers()
   const want = `${props.place.lat},${props.place.lon}`
   try {
-    const res = await fetch(`/api/radar?lat=${props.place.lat}&lon=${props.place.lon}`)
+    const params = new URLSearchParams({ lat: props.place.lat, lon: props.place.lon })
+    if (replayDate.value) params.set('replay', replayDate.value)
+    const res = await fetch(`/api/radar?${params}`)
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`)
     if (want !== `${props.place.lat},${props.place.lon}`) return
@@ -222,7 +226,7 @@ function drawCities(force = true) {
     const style = categoryStyle(aqi != null ? aqiCategory(aqi) : null)
     L.circleMarker([c.lat, c.lon], {
       radius: 8, color: '#FFFFFF', weight: 2.5, fillColor: style.bg, fillOpacity: 1,
-    }).bindTooltip(`${c.name} <strong>${aqi ?? '—'}</strong>`, {
+    }).bindTooltip(`${escapeHtml(c.name)} <strong>${escapeHtml(aqi ?? '—')}</strong>`, {
       permanent: true, direction: 'right', className: 'radar-city',
     }).addTo(cityLayer)
   }
@@ -294,7 +298,7 @@ onMounted(() => {
   load()
 })
 
-watch(() => props.place, load)
+watch(() => [props.place, replayDate.value], load)
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)

@@ -5,6 +5,7 @@ import AirNowCard from '../components/AirNowCard.vue'
 import AssistantPanel from '../components/AssistantPanel.vue'
 import CircularDialog from '../components/CircularDialog.vue'
 import CitySearch from '../components/CitySearch.vue'
+import ReplayBanner from '../components/ReplayBanner.vue'
 import ExposureCalculator from '../components/ExposureCalculator.vue'
 import ForecastChart from '../components/ForecastChart.vue'
 import Icon3D from '../components/Icon3D.vue'
@@ -15,10 +16,11 @@ import SmokeRadar from '../components/SmokeRadar.vue'
 import SmokeTrailMap from '../components/SmokeTrailMap.vue'
 import VentilationCard from '../components/VentilationCard.vue'
 import { useCity } from '../composables/useCity'
-import { formatHour, grapStage, relativeHour } from '../lib/aqi'
+import { formatHour, grapStage, inDelhiNcr, relativeHour } from '../lib/aqi'
 import { daySummary } from '../lib/school'
 import { trailHeadline } from '../lib/smokeTrail'
 import { SECTIONS } from '../router'
+import { currentReplay, isReplayCity, replayDate, replayInfo } from '../lib/replay'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,7 +43,16 @@ function placeFromQuery(q) {
 const query = computed(() => ({
   city: place.value.name, region: place.value.region || undefined,
   lat: place.value.lat, lon: place.value.lon,
+  replay: replayDate.value || undefined, // replay mode travels with every link
 }))
+
+// Demo replay (?replay=2026-10-08): only known snapshot dates, only their cities.
+function applyReplay(q) {
+  const date = replayInfo(q.replay) ? q.replay : ''
+  replayDate.value = date
+  if (date && !isReplayCity(place.value, date)) place.value = { ...replayInfo(date).cities[0] }
+}
+const exitReplay = computed(() => ({ name: 'dashboard', params: route.params, query: { ...query.value, replay: undefined } }))
 
 function selectPlace(next) {
   city.selectPlace(next)
@@ -50,15 +61,23 @@ function selectPlace(next) {
 }
 
 onMounted(() => {
+  applyReplay(route.query)
   const fromUrl = placeFromQuery(route.query)
-  if (fromUrl) city.selectPlace(fromUrl)
-  else city.loadAll()
+  if (fromUrl && (!replayDate.value || isReplayCity(fromUrl, replayDate.value))) city.selectPlace(fromUrl)
+  else city.loadAll(true)
 })
 
 watch(() => route.query, (q) => {
+  const wasReplay = replayDate.value
+  applyReplay(q)
   const fromUrl = placeFromQuery(q)
-  if (fromUrl && (fromUrl.lat !== place.value.lat || fromUrl.lon !== place.value.lon)) city.selectPlace(fromUrl)
+  if (fromUrl && (fromUrl.lat !== place.value.lat || fromUrl.lon !== place.value.lon)
+      && (!replayDate.value || isReplayCity(fromUrl, replayDate.value))) city.selectPlace(fromUrl)
+  else if (wasReplay !== replayDate.value) city.loadAll(true)
 })
+
+// GRAP is a Delhi-NCR scheme: only show stages for cities in (approximate) NCR.
+const grapApplies = computed(() => inDelhiNcr(place.value.lat, place.value.lon))
 
 // ---------- overview tiles ----------
 const tomorrow = computed(() => school.days.value?.[1])
@@ -71,10 +90,12 @@ const tiles = computed(() => {
   const best = a.best_hour
   const bestWhen = best ? relativeHour(best.time, now.value || a.current.time) : ''
   return [
-    { icon: 'cloud', label: 'PM2.5 this hour', value: pm != null ? `${Math.round(pm)}` : '—', unit: 'µg/m³' },
+    { icon: 'cloud', label: 'PM2.5 this hour', value: pm != null ? `${Math.round(pm)}` : '—', unit: 'µg/m³ · model estimate' },
     { icon: 'sun_behind_cloud', label: 'Best time outside', value: best ? formatHour(best.time) : '—',
       unit: best ? `${bestWhen.startsWith('tomorrow') ? 'tomorrow' : 'today'} · AQI ${best.aqi}` : '' },
-    { icon: 'face_with_medical_mask', label: 'GRAP stage', value: grap ? `Stage ${grap}` : 'None', unit: grap ? 'restrictions apply' : 'below Stage I' },
+    grapApplies.value
+      ? { icon: 'face_with_medical_mask', label: 'GRAP stage (Delhi-NCR)', value: grap ? `Stage ${grap}` : 'None', unit: grap ? 'restrictions apply' : 'below Stage I' }
+      : { icon: 'face_with_medical_mask', label: 'GRAP stage', value: 'n/a', unit: 'Delhi-NCR scheme only' },
     { icon: 'fire', label: 'Fires on air\'s path', value: t ? String(t.fire_count) : '…', unit: t ? `in ${t.hours_traced} h` : 'tracing' },
   ]
 })
@@ -138,10 +159,19 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
         </RouterLink>
         <div class="title">
           <p class="eyebrow">{{ current?.label }}</p>
-          <h1>Air in {{ place.name }}</h1>
+          <h1>Air in {{ place.name }} <span v-if="currentReplay()" class="replay-pill">REPLAY · {{ currentReplay().label }}</span></h1>
         </div>
-        <CitySearch @select="selectPlace" />
+        <CitySearch v-if="!replayDate" @select="selectPlace" />
       </header>
+
+      <ReplayBanner
+        v-if="replayDate"
+        :date="replayDate"
+        :place="place"
+        :time-zone="timeZone"
+        :exit-to="exitReplay"
+        @select="selectPlace"
+      />
 
       <div v-if="city.airError.value" class="card error" role="alert">
         <strong>Couldn't load air quality for {{ place.name }}.</strong>
@@ -216,7 +246,7 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
             :loading="forecast.loading.value"
             :error="forecast.error.value"
             :time-zone="timeZone"
-            @retry="forecast.load(place)"
+            @retry="forecast.load(city.request())"
           />
           <SmokeTrailMap
             v-else
@@ -224,7 +254,7 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
             :data="trail.data.value"
             :loading="trail.loading.value"
             :error="trail.error.value"
-            @retry="trail.load(place)"
+            @retry="trail.load(city.request())"
           />
         </div>
 
@@ -240,8 +270,9 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
             :loading="school.loading.value"
             :error="school.error.value"
             :now="now"
+            :grap-applies="grapApplies"
             @change-times="city.changeSchoolTimes"
-            @retry="school.load(place, city.schoolTimes.value)"
+            @retry="school.load(city.request(), city.schoolTimes.value)"
             @write-circular="(date) => (circular = { open: true, date })"
           />
           <aside class="card side">
@@ -249,7 +280,7 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
               <Icon3D name="chart_increasing" :size="40" />
               <h2>How School Mode decides</h2>
             </div>
-            <p class="muted small">Each activity is checked against the forecast AQI for its own hour, on India's CPCB scale.</p>
+            <p class="muted small">UrbanWise's own guidance, based on India's CPCB AQI categories — not an official rule. Each activity is checked against the forecast AQI for its own hour.</p>
             <table class="rules">
               <thead><tr><th>AQI</th><th>GRAP</th><th>Decision</th></tr></thead>
               <tbody>
@@ -260,7 +291,7 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
                 </tr>
               </tbody>
             </table>
-            <p class="muted small">GRAP is the Graded Response Action Plan used in Delhi-NCR.</p>
+            <p class="muted small">GRAP (Graded Response Action Plan) applies to Delhi-NCR only, so UrbanWise shows it only for cities within ~130 km of Delhi.</p>
           </aside>
           </div>
         </div>
@@ -399,6 +430,19 @@ nav { display: grid; gap: 6px; }
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.replay-pill {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #B54708;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }

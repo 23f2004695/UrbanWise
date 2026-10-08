@@ -44,6 +44,15 @@ export function cityNow(timeZone, date = new Date()) {
   }
 }
 
+// GRAP is a Delhi-NCR scheme; approximated as within ~130 km of central Delhi
+// (mirrors backend services/advisory.py in_delhi_ncr).
+export function inDelhiNcr(lat, lon) {
+  const rad = (d) => (d * Math.PI) / 180
+  const [dLat, dLon] = [rad(lat - 28.6139), rad(lon - 77.209)]
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(28.6139)) * Math.cos(rad(lat)) * Math.sin(dLon / 2) ** 2
+  return 2 * 6371 * Math.asin(Math.sqrt(a)) <= 130
+}
+
 // Graded Response Action Plan stage for an AQI (null below Stage I).
 export function grapStage(aqi) {
   if (aqi == null) return null

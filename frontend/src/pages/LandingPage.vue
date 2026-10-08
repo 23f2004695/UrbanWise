@@ -78,11 +78,11 @@ const FEATURES = [
   { icon: 'fire', title: 'Smoke Trail & Radar', section: 'smoke', view: 'radar',
     text: 'Trace your air back 48 hours, or watch a time-lapse of fires, wind and smoke drifting across North India.' },
   { icon: 'wind_face', title: 'Incoming Smoke Alert', section: 'smoke', view: 'coming',
-    text: 'Runs today\'s fires forward on forecast winds to warn when smoke is likely to reach your city.' },
+    text: 'Runs today\'s satellite-detected fires forward on forecast winds to estimate when smoke may reach your city.' },
   { icon: 'school', title: 'School Mode + parent notices', section: 'school',
-    text: 'Go, limit or cancel for assembly, PE and dismissal — and a notice to parents in English, Hindi and Punjabi.' },
+    text: 'UrbanWise guidance (go, limit or cancel) for assembly, PE and dismissal — and a notice to parents in English, Hindi and Punjabi.' },
   { icon: 'face_with_medical_mask', title: 'Today\'s air & forecast', section: '',
-    text: 'India\'s own CPCB AQI, plain-language advice, and the best and worst hours to be outside.' },
+    text: 'India\'s CPCB AQI scale applied to CAMS model estimates, plain-language advice, and the best and worst hours to be outside.' },
   { icon: 'lungs', title: 'Your exposure', section: 'health',
     text: 'How much pollution you\'ll breathe in, shown as a cigarette equivalent — plus when to open windows.' },
   { icon: 'speech_balloon', title: 'Ask UrbanWise', section: 'ask',
@@ -91,7 +91,7 @@ const FEATURES = [
 
 const STEPS = [
   { icon: 'satellite', title: 'Satellites & sensors', text: 'NASA fire detections, CAMS air-quality forecasts and wind data, refreshed hourly.' },
-  { icon: 'chart_increasing', title: 'UrbanWise connects them', text: 'Indian AQI, smoke back-tracking, and School Mode rules aligned with GRAP.' },
+  { icon: 'chart_increasing', title: 'UrbanWise connects them', text: 'CPCB-scale AQI, smoke back- and forward-tracking, and School Mode guidance based on CPCB categories.' },
   { icon: 'school', title: 'You act', text: 'Clear decisions for today and tomorrow — and a notice ready to send.' },
 ]
 
@@ -150,15 +150,15 @@ const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['pa', 'ਪੰਜ�
           <span class="hl-orange">Know what to do.</span>
         </h1>
         <p class="lede">
-          Live air quality, the farm fires your smoke likely came from, and clear decisions for
-          families and schools — in English, हिंदी and ਪੰਜਾਬੀ.
+          Air-quality estimates, the satellite-detected fires your smoke likely passed, and clear
+          guidance for families and schools — in English, हिंदी and ਪੰਜਾਬੀ.
         </p>
         <div class="search-row">
           <CitySearch @select="openCity" />
         </div>
         <p v-if="delhi" class="live-chip">
           <span class="dot" :style="{ background: categoryStyle(delhi.category).bg }"></span>
-          Delhi right now: <strong>AQI {{ delhi.aqi }} · {{ delhi.category }}</strong>
+          Delhi now (model estimate): <strong>AQI {{ delhi.aqi }} · {{ delhi.category }}</strong>
         </p>
       </div>
       <div class="hero-scene">
@@ -186,8 +186,8 @@ const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['pa', 'ਪੰਜ�
     </section>
 
     <!-- LIVE TICKER -->
-    <section v-if="snapshot?.cities.length" class="ticker" aria-label="Live air quality in North Indian cities">
-      <span class="ticker-label">● LIVE</span>
+    <section v-if="snapshot?.cities.length" class="ticker" aria-label="Latest model estimates of air quality in North Indian cities">
+      <span class="ticker-label" title="Latest CAMS model estimates, refreshed every 15 minutes">● LATEST ESTIMATES</span>
       <div class="ticker-track">
         <div class="ticker-items">
           <!-- The second copy only exists to loop the marquee seamlessly. -->
@@ -275,7 +275,7 @@ const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['pa', 'ਪੰਜ�
         <h2>Tomorrow's decision, and the message to parents — done</h2>
         <ul class="checks">
           <li>Checks assembly, PE and dismissal against that hour's forecast</li>
-          <li>Matches India's CPCB categories and GRAP stages</li>
+          <li>Based on India's CPCB AQI categories (GRAP stages shown for Delhi-NCR)</li>
           <li>Writes the notice in English, Hindi and Punjabi — you review and share</li>
         </ul>
         <RouterLink :to="{ name: 'dashboard', params: { section: 'school' } }" class="btn btn-accent">Try School Mode</RouterLink>
@@ -313,12 +313,16 @@ const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['pa', 'ਪੰਜ�
     <footer class="footer small muted">
       <p>
         Built for Environmental Hacks — Bharat Builds Tour, Track 1: Air. UrbanWise gives estimates
-        for planning, not medical advice.
+        for planning, not medical advice. Air-quality values are CAMS model estimates, not station
+        measurements; smoke paths and arrival times are model-based estimates.
       </p>
       <p>
         Data: Open-Meteo (CAMS air-quality forecasts, winds), NASA FIRMS (fire detections),
         CPCB (AQI bands), CAQM (GRAP). Map © OpenStreetMap contributors.
         3D icons: Microsoft Fluent Emoji (MIT).
+      </p>
+      <p>
+        <RouterLink :to="{ name: 'dashboard', query: { replay: '2026-10-08' } }">▶ Demo replay — real data captured 8 Oct 2026</RouterLink>
       </p>
     </footer>
   </div>

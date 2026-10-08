@@ -9,6 +9,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
   now: { type: String, default: '' }, // city-local "YYYY-MM-DDTHH:MM"
+  grapApplies: { type: Boolean, default: true }, // GRAP is Delhi-NCR only
 })
 
 const emit = defineEmits(['change-times', 'retry', 'write-circular'])
@@ -50,7 +51,7 @@ function onTimeChange(slot, value) {
         <Icon3D name="school" :size="48" :delay="1.1" />
         <div>
         <h2 id="school-title">School Mode</h2>
-        <p class="muted small">Can children be outside? Checked against the forecast for each activity's hour.</p>
+        <p class="muted small">Can children be outside? UrbanWise guidance based on CPCB AQI categories, checked against each activity's forecast hour — not an official CPCB or school-board rule.</p>
         </div>
       </div>
       <span v-if="loading" class="muted small">Updating…</span>
@@ -79,7 +80,7 @@ function onTimeChange(slot, value) {
       <div v-if="day">
         <p class="summary">
           <strong>{{ daySummary(day.slots) }}</strong>
-          <span v-if="day.grap_stage" class="grap">GRAP Stage {{ day.grap_stage }}</span>
+          <span v-if="day.grap_stage && grapApplies" class="grap" title="Graded Response Action Plan — applies to Delhi-NCR">GRAP Stage {{ day.grap_stage }} · Delhi-NCR</span>
         </p>
 
         <ul class="slots">

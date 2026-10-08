@@ -38,27 +38,32 @@ function useLatest(fetcher) {
   return { data, loading, error, load }
 }
 
+// `place.replay` (a date) asks for the demo-replay snapshot instead of live data.
+function query(place, extra = {}) {
+  const params = new URLSearchParams({ lat: place.lat, lon: place.lon, ...extra })
+  if (place.replay) params.set('replay', place.replay)
+  return params
+}
+
 export function useAirData() {
   const { data: air, ...rest } = useLatest(
-    (place) => getJson(`/api/air?lat=${place.lat}&lon=${place.lon}`),
+    (place) => getJson(`/api/air?${query(place)}`),
   )
   return { air, ...rest }
 }
 
 export function useSchoolPlan() {
-  const { data, ...rest } = useLatest((place, times) => {
-    const params = new URLSearchParams({ lat: place.lat, lon: place.lon, ...times })
-    return getJson(`/api/school?${params}`).then((d) => d.days)
-  })
+  const { data, ...rest } = useLatest((place, times) =>
+    getJson(`/api/school?${query(place, times)}`).then((d) => d.days))
   return { days: data, ...rest }
 }
 
 export function useSmokeTrail() {
-  return useLatest((place) => getJson(`/api/smoke-trail?lat=${place.lat}&lon=${place.lon}`))
+  return useLatest((place) => getJson(`/api/smoke-trail?${query(place)}`))
 }
 
 export function useSmokeForecast() {
-  return useLatest((place) => getJson(`/api/smoke-forecast?lat=${place.lat}&lon=${place.lon}`))
+  return useLatest((place) => getJson(`/api/smoke-forecast?${query(place)}`))
 }
 
 export function searchPlaces(query) {

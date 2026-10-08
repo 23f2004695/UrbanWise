@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Icon3D from './Icon3D.vue'
 import { formatInZone } from '../lib/aqi'
+import { escapeHtml } from '../lib/html'
 import { forecastHeadline, localFiresNote } from '../lib/smokeForecast'
 
 const props = defineProps({
@@ -51,14 +52,14 @@ function draw() {
       radius: Math.min(6 + Math.sqrt(c.fires) * 1.6, 18),
       color: '#FFFFFF', weight: 2, fillColor: hits ? HOT : '#F5A06A', fillOpacity: 0.95,
     }).bindTooltip(
-      `<strong>${c.fires} fires</strong>${c.district ? ` near ${c.district}, ${c.state}` : ''}<br>` +
-      (hits ? `Smoke likely arrives ~${formatInZone(c.arrival_time, props.timeZone)}` : `Passes ${c.closest_km} km away at closest`),
+      `<strong>${escapeHtml(c.fires)} fires</strong>${c.district ? ` near ${escapeHtml(c.district)}, ${escapeHtml(c.state)}` : ''}<br>` +
+      (hits ? `Smoke likely arrives ~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}` : `Passes ${escapeHtml(c.closest_km)} km away at closest`),
     ).addTo(layers)
     if (hits) {
       // Label where the smoke first reaches the city.
       const p = c.path.find(([, , h]) => h === c.arrival_h) || c.path.at(-1)
       L.marker([p[0], p[1]], {
-        icon: L.divIcon({ className: 'eta', html: `~${formatInZone(c.arrival_time, props.timeZone)}`, iconSize: null }),
+        icon: L.divIcon({ className: 'eta', html: `~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}`, iconSize: null }),
         interactive: false,
       }).addTo(layers)
       pts.forEach((pt) => bounds.extend(pt))
@@ -68,7 +69,7 @@ function draw() {
 
   L.circleMarker([props.place.lat, props.place.lon], {
     radius: 9, color: '#FFFFFF', weight: 3, fillColor: '#22357A', fillOpacity: 1,
-  }).bindTooltip(props.place.name, { permanent: true, direction: 'right', className: 'trail-label city' }).addTo(layers)
+  }).bindTooltip(escapeHtml(props.place.name), { permanent: true, direction: 'right', className: 'trail-label city' }).addTo(layers)
 
   // No animation: an in-flight zoom crashes Leaflet if the view is switched mid-way.
   map.fitBounds(bounds.pad(0.12), { maxZoom: 8, animate: false })

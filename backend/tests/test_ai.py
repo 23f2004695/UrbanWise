@@ -69,6 +69,11 @@ def test_hour_12(hhmm, expected):
     assert ai._hour_12(hhmm) == expected
 
 
+def test_grap_is_left_out_of_notices_outside_delhi_ncr():
+    assert ai.circular_facts(DAY, "X", grap_applies=False)["grap_stage"] is None
+    assert ai.circular_facts(DAY, "X", grap_applies=True)["grap_stage"] == "II"
+
+
 def test_blank_school_name_gets_a_default():
     assert ai.circular_facts(DAY, "")["school_name"] == "Our school"
 
@@ -244,7 +249,7 @@ def test_chat_endpoint(monkeypatch):
 
     seen = {}
     monkeypatch.setattr(app_module, "city_context",
-                        lambda lat, lon, name, slots: {"city": name, "pe": slots[1]["time"]})
+                        lambda lat, lon, name, slots, replay_date=None: {"city": name, "pe": slots[1]["time"]})
 
     def fake_reply(message, history, context):
         seen.update(message=message, history=history, context=context)

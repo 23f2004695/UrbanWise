@@ -88,7 +88,7 @@ const bestLabel = (time) => relativeHour(time, props.now || props.air?.current?.
           Going at <strong>{{ bestLabel(best.time) }}</strong> instead would cut this by about <strong>{{ saving }}%</strong>.
         </p>
         <p class="muted small footnote">
-          Based on PM2.5 now ({{ Math.round(pm25Now) }} µg/m³). Rule of thumb from Berkeley Earth:
+          Based on the model's PM2.5 estimate for this hour ({{ Math.round(pm25Now) }} µg/m³). Rule of thumb from Berkeley Earth:
           breathing 22 µg/m³ for a day ≈ 1 cigarette. An estimate, not medical advice.
         </p>
       </div>

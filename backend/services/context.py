@@ -4,7 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from services.advisory import school_plan
+from services.advisory import in_delhi_ncr, school_plan
+from services import replay
 from services.air import get_air, get_school_hours
 from services.smoke_trail import get_smoke_forecast, get_smoke_trail
 
@@ -16,11 +17,20 @@ def _local_now(timezone_name):
         return None
 
 
-def city_context(lat, lon, place_name, slots):
-    air = get_air(lat, lon)
+def city_context(lat, lon, place_name, slots, replay_date=None):
+    if replay_date:
+        # Demo replay: the same facts, from the captured snapshot.
+        air = replay.api(replay_date, "air", lat, lon)
+        hours, today = replay.school_hours(replay_date, lat, lon)
+        trail_fetch = lambda: replay.api(replay_date, "smoke-trail", lat, lon)  # noqa: E731
+        forecast_fetch = lambda: replay.api(replay_date, "smoke-forecast", lat, lon)  # noqa: E731
+    else:
+        air = get_air(lat, lon)
+        hours, today = get_school_hours(lat, lon)
+        trail_fetch = lambda: get_smoke_trail(lat, lon)  # noqa: E731
+        forecast_fetch = lambda: get_smoke_forecast(lat, lon)  # noqa: E731
     current = air["current"]
 
-    hours, today = get_school_hours(lat, lon)
     tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
     school = [
         {
@@ -38,8 +48,8 @@ def city_context(lat, lon, place_name, slots):
     # Smoke data is a bonus: fetch both in parallel, and answer without them if
     # either fails for any reason.
     with ThreadPoolExecutor(max_workers=2) as pool:
-        trail_job = pool.submit(get_smoke_trail, lat, lon)
-        forecast_job = pool.submit(get_smoke_forecast, lat, lon)
+        trail_job = pool.submit(trail_fetch)
+        forecast_job = pool.submit(forecast_fetch)
 
     try:
         trail = trail_job.result()["summary"]
@@ -73,9 +83,19 @@ def city_context(lat, lon, place_name, slots):
     def brief(hour):
         return hour and {"time": hour["time"], "aqi": hour["aqi"]}
 
+    local_time = _local_now(air["location"]["timezone"])
+    if replay_date:
+        captured = datetime.fromisoformat(replay.marker(replay_date)["captured_at_utc"])
+        try:
+            local_time = captured.astimezone(ZoneInfo(air["location"]["timezone"])).strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            pass
+
     return {
+        "data_mode": f"DEMO REPLAY of data captured {replay_date}" if replay_date else "latest",
         "city": place_name,
-        "local_time": _local_now(air["location"]["timezone"]),
+        "grap_applies_here": in_delhi_ncr(lat, lon),
+        "local_time": local_time,
         "air_now": {
             "aqi": current["aqi"],
             "category": current["category"],

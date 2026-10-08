@@ -11,7 +11,7 @@ describe('trailHeadline', () => {
       top_districts: [{ district: 'Sangrur' }, { district: 'Bathinda' }, { district: 'Patiala' }, { district: 'Mansa' }],
     }
     expect(trailHeadline(summary, 'Delhi')).toBe(
-      'The air over Delhi likely passed over 9 fires, including some near Sangrur, Bathinda and Patiala, in the last 48 hours.',
+      'The air over Delhi likely passed 9 satellite-detected fires, including some near Sangrur, Bathinda and Patiala, in the last 48 hours.',
     )
   })
 
@@ -21,13 +21,13 @@ describe('trailHeadline', () => {
       top_districts: [{ district: 'Sangrur', fires: 2 }, { district: 'Mansa', fires: 1 }],
     }
     expect(trailHeadline(summary, 'Delhi')).toBe(
-      'The air over Delhi likely passed over 3 fires near Sangrur and Mansa in the last 48 hours.',
+      'The air over Delhi likely passed 3 satellite-detected fires near Sangrur and Mansa in the last 48 hours.',
     )
   })
 
   it('handles one fire outside mapped districts', () => {
     expect(trailHeadline({ ...base, fire_count: 1 }, 'Lucknow'))
-      .toBe('The air over Lucknow likely passed over 1 fire in the last 48 hours.')
+      .toBe('The air over Lucknow likely passed 1 satellite-detected fire in the last 48 hours.')
   })
 
   it('says so when no fires were passed', () => {

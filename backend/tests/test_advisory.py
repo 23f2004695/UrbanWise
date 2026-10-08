@@ -97,3 +97,14 @@ def test_grap_uses_the_day_average_not_one_bad_hour():
     assert day["slots"][0]["decision"] == "cancel"          # the 8 am slot itself is still flagged
     assert day["day_aqi"] == cpcb_aqi((125 + 23 * 70) / 24, None)[0]
     assert day["grap_stage"] is None                         # daily level ~Moderate: no GRAP stage
+
+
+@pytest.mark.parametrize("name, lat, lon, inside", [
+    ("Delhi", 28.6139, 77.209, True), ("Gurugram", 28.4601, 77.0263, True),
+    ("Noida", 28.5355, 77.391, True), ("Meerut", 28.98, 77.7064, True), ("Panipat", 29.3875, 76.9682, True),
+    ("Agra", 27.1833, 78.0167, False), ("Ludhiana", 30.912, 75.8538, False),
+    ("Chandigarh", 30.7363, 76.7884, False), ("Jaipur", 26.9196, 75.7878, False),
+])
+def test_delhi_ncr_approximation(name, lat, lon, inside):
+    from services.advisory import in_delhi_ncr
+    assert in_delhi_ncr(lat, lon) is inside, name

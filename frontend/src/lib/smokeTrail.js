@@ -8,7 +8,7 @@ export function trailHeadline(summary, placeName) {
   if (count === 0) {
     return `The air over ${placeName} travelled about ${summary.trail_km} km in ${summary.hours_traced} hours without passing any detected fires.`
   }
-  const fires = `${count} fire${count === 1 ? '' : 's'}`
+  const fires = `${count} satellite-detected fire${count === 1 ? '' : 's'}`
   const names = summary.top_districts.slice(0, 3).map((d) => d.district)
   // Only say "near X" outright when the named districts account for every fire.
   const allNamed = summary.top_districts.length <= 3 && !summary.other_fires
@@ -16,7 +16,7 @@ export function trailHeadline(summary, placeName) {
   if (names.length) {
     where = allNamed ? ` near ${joinNames(names)}` : `, including some near ${joinNames(names)},`
   }
-  return `The air over ${placeName} likely passed over ${fires}${where} in the last ${summary.hours_traced} hours.`
+  return `The air over ${placeName} likely passed ${fires}${where} in the last ${summary.hours_traced} hours.`
 }
 
 export function trailDetail(summary) {

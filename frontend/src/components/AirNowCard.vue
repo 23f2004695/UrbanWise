@@ -63,7 +63,8 @@ const when = (time) => relativeHour(time, props.now || current.value?.time)
     <div v-else-if="loading" class="skeleton" aria-hidden="true"></div>
 
     <p v-if="current" class="muted small footnote">
-      Indian CPCB scale · {{ current.basis }} · Source: {{ current.source }}
+      Model estimate, not a station reading: PM2.5/PM10 from the CAMS global model (via Open-Meteo),
+      converted to India's CPCB AQI using a 24-hour average.
     </p>
   </section>
 </template>

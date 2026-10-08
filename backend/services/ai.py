@@ -127,8 +127,9 @@ def _hour_12(hhmm):
     return f"{(hour % 12) or 12}:{hhmm[3:]} {suffix}"
 
 
-def circular_facts(day, school_name):
-    """The only facts the notice may state, derived from the School Mode plan."""
+def circular_facts(day, school_name, grap_applies=True):
+    """The only facts the notice may state, derived from the School Mode plan.
+    GRAP is Delhi-NCR only, so it is left out elsewhere."""
     slots = [s for s in day["slots"] if s["aqi"] is not None]
     worst = max((s["aqi"] for s in slots), default=None)
     strictest = max((s["decision"] for s in slots), key=SEVERITY.index, default="go")
@@ -136,8 +137,9 @@ def circular_facts(day, school_name):
         "school_name": school_name.strip() or "Our school",
         "date": day["date"],
         "worst_aqi": worst,
-        # Use School Mode's day-average GRAP stage when present.
-        "grap_stage": day["grap_stage"] if "grap_stage" in day else (grap_stage(worst) if worst is not None else None),
+        # Use School Mode's day-average GRAP stage when present; Delhi-NCR only.
+        "grap_stage": (day["grap_stage"] if "grap_stage" in day else (grap_stage(worst) if worst is not None else None))
+        if grap_applies else None,
         "overall": OVERALL[strictest],
         "severity": strictest,
         "activities": [
@@ -283,12 +285,19 @@ Rules:
   numbers, places, events or forecasts that are not in the DATA.
 - If the DATA cannot answer the question, say so briefly and suggest what it can tell them.
 - AQI is on India's CPCB scale: 0-50 Good, 51-100 Satisfactory, 101-200 Moderate,
-  201-300 Poor, 301-400 Very Poor, 401-500 Severe.
+  201-300 Poor, 301-400 Very Poor, 401-500 Severe. AQI and PM values are estimates
+  from the CAMS air-quality model, not station measurements: say "estimated".
+- Fires are satellite-detected fires (thermal anomalies). In October-November in
+  Punjab and Haryana they are mostly crop-residue burning, but don't claim that a
+  specific fire is stubble burning.
+- School Mode decisions are UrbanWise guidance based on CPCB categories, not an
+  official rule. GRAP is a Delhi-NCR scheme: only mention it if grap_applies_here is true.
 - Exposure rule of thumb (Berkeley Earth): breathing 22 µg/m³ of PM2.5 for 24 hours
   ≈ 1 cigarette. Exercise roughly doubles to quadruples how much is inhaled.
 - Smoke Trail results are likely contributing sources, not exact shares; say "likely".
-- incoming_smoke_next_48h predicts smoke from current fires reaching the city. Times
-  are UTC; convert to the city's local time (India is UTC+5:30) and say "around".
+- incoming_smoke_next_48h is a model estimate of smoke from current fires reaching the
+  city: say it "may" arrive, never that it will. Times are UTC; convert to the city's
+  local time (India is UTC+5:30) and say "around".
 - Give practical, proportionate advice. Do not diagnose or give medical treatment.
   Only if the user mentions symptoms or a health condition, suggest seeing a doctor.
 - Reply in the same language as the user's latest message (English, Hindi in

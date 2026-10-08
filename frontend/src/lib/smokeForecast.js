@@ -10,12 +10,12 @@ export function forecastHeadline(data, placeName, timeZone) {
   if (!data) return ''
   const a = data.alert
   if (!a.incoming) {
-    return `No smoke from current fires is expected to reach ${placeName} in the next 48 hours.`
+    return `Our model doesn't expect smoke from currently detected fires to reach ${placeName} in the next 48 hours.`
   }
   const when = formatInZone(a.first_arrival_time, timeZone)
   const where = a.districts.length ? ` near ${joinNames(a.districts.slice(0, 3))}` : ''
-  const fires = `${a.fires} fire${a.fires === 1 ? '' : 's'}`
-  return `Smoke from ${fires}${where} is likely to reach ${placeName} around ${when} — in about ${a.first_arrival_h} hours.`
+  const fires = `${a.fires} satellite-detected fire${a.fires === 1 ? '' : 's'}`
+  return `Smoke from ${fires}${where} may reach ${placeName} around ${when} — about ${a.first_arrival_h} hours from now (model estimate).`
 }
 
 export function localFiresNote(data) {

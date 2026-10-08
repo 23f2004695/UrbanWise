@@ -95,7 +95,7 @@ onBeforeUnmount(() => chart?.destroy())
       <Icon3D name="chart_increasing" :size="44" :delay="0.4" />
       <div>
         <h2>Next 48 hours</h2>
-        <p class="muted small">Hourly AQI from forecast PM2.5 and PM10. Plan outdoor time around the lower bars.</p>
+        <p class="muted small">Hourly AQI from CAMS model forecasts of PM2.5 and PM10. Plan outdoor time around the lower bars.</p>
       </div>
     </div>
     <div class="chart">

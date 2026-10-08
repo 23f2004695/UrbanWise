@@ -120,7 +120,7 @@ def build_air_report(raw):
             "pm10_now": raw["current"].get("pm10"),
             "advice": advice(aqi),
             "basis": "24-hour average (CPCB method)",
-            "source": "Open-Meteo (CAMS model)",
+            "source": "CAMS global model estimate via Open-Meteo (not a station measurement)",
         },
         "forecast": forecast,
         "best_hour": best,

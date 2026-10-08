@@ -80,6 +80,21 @@ def advice(aqi):
     return ADVICE[category(aqi)]
 
 
+# GRAP (Graded Response Action Plan) is a Delhi-NCR scheme. We approximate NCR
+# as within ~130 km of central Delhi: conservative (may miss NCR's outer edge,
+# e.g. Alwar) but never labels places like Agra or Ludhiana as GRAP areas.
+DELHI = (28.6139, 77.209)
+NCR_RADIUS_KM = 130
+
+
+def in_delhi_ncr(lat, lon):
+    import math
+    p1, p2 = math.radians(DELHI[0]), math.radians(lat)
+    dp, dl = p2 - p1, math.radians(lon - DELHI[1])
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * 6371 * math.asin(math.sqrt(a)) <= NCR_RADIUS_KM
+
+
 def grap_stage(aqi):
     """Graded Response Action Plan stage for Delhi-NCR (None below Stage I)."""
     if aqi > 450:

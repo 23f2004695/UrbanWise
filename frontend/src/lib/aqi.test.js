@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aqiCategory, categoryStyle, cityNow, formatDay, formatHour, formatInZone, grapStage, relativeHour } from './aqi'
+import { aqiCategory, categoryStyle, cityNow, formatDay, formatHour, formatInZone, grapStage, inDelhiNcr, relativeHour } from './aqi'
 
 describe('formatHour', () => {
   it.each([
@@ -64,4 +64,11 @@ describe('relativeHour', () => {
     expect(relativeHour('2026-10-10T07:00', '2026-10-09T00:15')).toBe('tomorrow 7 am')
     expect(relativeHour(null, '2026-10-09T00:15')).toBe('')
   })
+})
+
+describe('inDelhiNcr (mirrors the backend)', () => {
+  it.each([
+    ['Delhi', 28.6139, 77.209, true], ['Gurugram', 28.4601, 77.0263, true], ['Meerut', 28.98, 77.7064, true],
+    ['Agra', 27.1833, 78.0167, false], ['Ludhiana', 30.912, 75.8538, false], ['Jaipur', 26.9196, 75.7878, false],
+  ])('%s → %s', (name, lat, lon, inside) => expect(inDelhiNcr(lat, lon)).toBe(inside))
 })
