@@ -142,7 +142,7 @@ onBeforeUnmount(() => { recognition?.abort(); stopSpeaking() })
       <Icon3D name="speech_balloon" :size="46" :delay="2.6" />
       <div>
         <h2 id="assistant-title">Ask UrbanWise</h2>
-        <p class="muted small">Answers use live data for {{ place.name }}. Ask in English, हिंदी or ਪੰਜਾਬੀ.</p>
+        <p class="muted small">Type or speak in English, हिंदी or ਪੰਜਾਬੀ</p>
       </div>
     </div>
 
@@ -201,7 +201,7 @@ onBeforeUnmount(() => { recognition?.abort(); stopSpeaking() })
 
       <button type="submit" class="send" :disabled="loading || !draft.trim()">Send</button>
     </form>
-    <p class="muted small note">Not medical advice. Wording by Gemini, facts from UrbanWise's live data.</p>
+    <p class="muted small note">Answers use {{ place.name }}'s data only · not medical advice</p>
   </section>
 </template>
 

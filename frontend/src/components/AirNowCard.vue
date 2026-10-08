@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { categoryStyle, POLLUTANT_NAMES, relativeHour } from '../lib/aqi'
+import { categoryStyle, POLLUTANT_NAMES } from '../lib/aqi'
+import InfoToggle from './InfoToggle.vue'
 import Icon3D from './Icon3D.vue'
 import { tilt as vTilt } from '../lib/tilt'
 
@@ -23,8 +24,6 @@ const mood = computed(() => {
   return 'face_with_medical_mask'
 })
 
-// The window is the next 24 h, so say "tomorrow" when the hour falls there.
-const when = (time) => relativeHour(time, props.now || current.value?.time)
 </script>
 
 <template>
@@ -47,25 +46,26 @@ const when = (time) => relativeHour(time, props.now || current.value?.time)
       </div>
 
       <div class="details">
-        <p class="category">{{ current.category }}</p>
+        <p class="category">
+          {{ current.category }}
+          <span class="tag-estimate" title="Model estimate (CAMS), not a station reading">estimate</span>
+        </p>
         <p class="advice">{{ current.advice }}</p>
-        <p class="muted small">
-          Main pollutant: <strong>{{ POLLUTANT_NAMES[current.dominant] }}</strong>
-          · PM2.5 {{ current.pm25 }} µg/m³ · PM10 {{ current.pm10 }} µg/m³
-        </p>
-        <p v-if="air.best_hour || air.worst_hour" class="hours small">
-          <span v-if="air.best_hour">Best time outside: <strong>{{ when(air.best_hour.time) }}</strong> (AQI {{ air.best_hour.aqi }})</span>
-          <span v-if="air.worst_hour">Worst: <strong>{{ when(air.worst_hour.time) }}</strong> (AQI {{ air.worst_hour.aqi }})</span>
-        </p>
       </div>
     </div>
 
     <div v-else-if="loading" class="skeleton" aria-hidden="true"></div>
 
-    <p v-if="current" class="muted small footnote">
-      Model estimate, not a station reading: PM2.5/PM10 from the CAMS global model (via Open-Meteo),
-      converted to India's CPCB AQI using a 24-hour average.
-    </p>
+    <InfoToggle v-if="current">
+      <p>
+        Main pollutant {{ POLLUTANT_NAMES[current.dominant] }} · PM2.5 {{ current.pm25 }} µg/m³ ·
+        PM10 {{ current.pm10 }} µg/m³ (24-hour averages).
+      </p>
+      <p>
+        Model estimate, not a station reading: PM2.5/PM10 from the CAMS global model (via Open-Meteo),
+        converted to India's CPCB AQI.
+      </p>
+    </InfoToggle>
   </section>
 </template>
 

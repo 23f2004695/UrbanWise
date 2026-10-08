@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { escapeHtml } from '../lib/html'
+import InfoToggle from './InfoToggle.vue'
 import { fireRadius, trailDetail, trailHeadline } from '../lib/smokeTrail'
 import Icon3D from './Icon3D.vue'
 
@@ -120,7 +121,6 @@ onBeforeUnmount(() => {
         <Icon3D name="fire" :size="48" :delay="0.9" />
         <div>
         <h2 id="trail-title">Smoke Trail</h2>
-        <p class="muted small">Where the air you're breathing came from over the last 48 hours, and the satellite-detected fires it likely passed.</p>
         </div>
       </div>
       <button v-if="data && !loading" type="button" class="replay" @click="draw">Replay</button>
@@ -136,13 +136,10 @@ onBeforeUnmount(() => {
       <p class="headline">{{ headline }}</p>
       <p class="muted">{{ detail }}</p>
       <ul v-if="summary.top_districts.length" class="districts">
-        <li v-for="d in summary.top_districts" :key="d.district">
-          <strong>{{ d.district }}</strong>
-          <span class="muted"> · {{ d.state }} · {{ d.fires }} fire{{ d.fires === 1 ? '' : 's' }}</span>
+        <li v-for="d in summary.top_districts" :key="d.district" :title="d.state">
+          <strong>{{ d.district }}</strong><span class="muted"> · {{ d.fires }}</span>
         </li>
-        <li v-if="summary.other_fires" class="muted">
-          + {{ summary.other_fires }} elsewhere along the path
-        </li>
+        <li v-if="summary.other_fires" class="muted">+{{ summary.other_fires }} elsewhere</li>
       </ul>
     </div>
 
@@ -152,16 +149,21 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="legend small muted">
-      <span><i class="dot city"></i>{{ place.name }}</span>
-      <span><i class="line"></i>Air's path (dots every 12 h)</span>
-      <span><i class="dot fire"></i>Fire on the path (size = intensity)</span>
+      <span><i class="line"></i>Air's path</span>
+      <span><i class="dot fire"></i>Fire on the path</span>
       <span><i class="dot other"></i>Other fires</span>
     </div>
 
-    <p class="muted small footnote">
-      Simplified back-trajectory using winds ~750 m up (Open-Meteo) and NASA FIRMS satellite fire detections.
-      Shows <strong>likely</strong> contributing sources, not exact shares.
-    </p>
+    <InfoToggle>
+      <p>
+        UrbanWise traces the air back 48 hours on winds ~750 m up (Open-Meteo) and matches fires seen by NASA
+        satellites (FIRMS VIIRS) along the way. Dots on the path mark every 12 hours; fire size shows intensity.
+      </p>
+      <p>
+        A simplified estimate: these are <strong>likely</strong> contributing sources, not exact shares. Satellite
+        fires are heat detections — in Oct–Nov in Punjab and Haryana mostly crop-residue burning.
+      </p>
+    </InfoToggle>
   </section>
 </template>
 
@@ -236,8 +238,6 @@ onBeforeUnmount(() => {
 .dot.other { background: #8A94A6; opacity: 0.6; }
 
 .line { display: inline-block; width: 18px; height: 4px; border-radius: 2px; background: #7B61FF; }
-
-.footnote { margin: 10px 0 0; }
 
 .error {
   display: flex;

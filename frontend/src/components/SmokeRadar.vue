@@ -6,6 +6,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Icon3D from './Icon3D.vue'
+import InfoToggle from './InfoToggle.vue'
 import { aqiCategory, categoryStyle, formatInZone } from '../lib/aqi'
 import { escapeHtml } from '../lib/html'
 import { replayDate } from '../lib/replay'
@@ -337,8 +338,10 @@ onBeforeUnmount(() => {
     <div class="card-head">
       <Icon3D name="satellite" :size="48" />
       <div>
-        <h2 id="radar-title">Smoke Radar</h2>
-        <p class="muted small">A 48-hour time-lapse: yesterday's fires, today's smoke and tomorrow's winds over North India.</p>
+        <h2 id="radar-title">
+          Smoke Radar
+          <span class="tag-estimate" title="Smoke is simulated from fires and winds">simulation</span>
+        </h2>
       </div>
     </div>
 
@@ -373,15 +376,21 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="legend small muted">
-      <span><i class="streak"></i>Wind direction (sped up)</span>
-      <span><i class="dot fire"></i>Fire seen by satellite</span>
-      <span><i class="dot smoke"></i>Smoke (orange = fresh, grey = older)</span>
-      <span><i class="dot city"></i>City AQI that hour</span>
+      <span><i class="streak"></i>Wind</span>
+      <span><i class="dot fire"></i>Fire</span>
+      <span><i class="dot smoke"></i>Smoke</span>
+      <span><i class="dot city"></i>City AQI</span>
     </div>
-    <p class="muted small footnote">
-      Winds ~750 m up and air quality from Open-Meteo (CAMS); fires from NASA FIRMS. Smoke is simulated by
-      carrying particles on the wind from each detected fire — an illustration of likely transport, not a measurement.
-    </p>
+    <InfoToggle>
+      <p>
+        A 48-hour time-lapse (24 h back, 24 h ahead). Winds ~750 m up and air quality from Open-Meteo (CAMS);
+        fires from NASA FIRMS. Wind streaks are sped up so you can see the direction.
+      </p>
+      <p>
+        Smoke is simulated by carrying particles on the wind from each detected fire (orange = fresh, grey = older) —
+        an illustration of likely transport, not a measurement.
+      </p>
+    </InfoToggle>
   </section>
 </template>
 
@@ -467,8 +476,6 @@ onBeforeUnmount(() => {
 .dot.smoke { background: linear-gradient(90deg, #F0A060, #8A8C96); }
 
 .dot.city { background: #FFD60A; box-shadow: 0 0 0 2px #fff inset; }
-
-.footnote { margin: 10px 0 0; }
 
 .error { display: flex; gap: 8px; align-items: center; color: #B42318; margin: 12px 0; }
 

@@ -20,7 +20,10 @@ const text = computed(() => forecastHeadline(props.data, props.place.name, props
   <div v-if="data" class="banner" :class="{ incoming }" role="status">
     <Icon3D :name="incoming ? 'fire' : 'wind_face'" :size="38" />
     <div class="body">
-      <p class="label">{{ incoming ? 'Incoming smoke · model estimate' : 'Smoke outlook · next 48 h' }}</p>
+      <p class="label">
+        {{ incoming ? 'Incoming smoke' : 'Smoke outlook · next 48 h' }}
+        <span class="tag-estimate" title="Model estimate from forecast winds">estimate</span>
+      </p>
       <p class="text">{{ text }}</p>
     </div>
     <RouterLink v-if="link" :to="link" class="see">See forecast →</RouterLink>

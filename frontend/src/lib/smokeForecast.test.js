@@ -9,13 +9,13 @@ const incoming = {
 describe('forecastHeadline', () => {
   it('gives place, time in the city timezone, and hours', () => {
     expect(forecastHeadline(incoming, 'New Delhi', 'Asia/Kolkata')).toBe(
-      'Smoke from 45 satellite-detected fires near Phalodi may reach New Delhi around Sat 1 am — about 34 hours from now (model estimate).',
+      'Smoke from 45 fires near Phalodi may reach New Delhi around Sat 1 am (in about 34 h).',
     )
   })
 
   it('reassures when nothing is coming', () => {
     expect(forecastHeadline({ alert: { incoming: false }, local_fires: 0 }, 'Jaipur', 'Asia/Kolkata'))
-      .toBe("Our model doesn't expect smoke from currently detected fires to reach Jaipur in the next 48 hours.")
+      .toBe('No smoke from current fires is expected to reach Jaipur in the next 48 hours.')
   })
 })
 

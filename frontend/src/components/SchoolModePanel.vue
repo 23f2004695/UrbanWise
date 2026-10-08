@@ -51,7 +51,7 @@ function onTimeChange(slot, value) {
         <Icon3D name="school" :size="48" :delay="1.1" />
         <div>
         <h2 id="school-title">School Mode</h2>
-        <p class="muted small">Can children be outside? UrbanWise guidance based on CPCB AQI categories, checked against each activity's forecast hour — not an official CPCB or school-board rule.</p>
+        <p class="muted small">Can kids be outside? · UrbanWise guidance</p>
         </div>
       </div>
       <span v-if="loading" class="muted small">Updating…</span>

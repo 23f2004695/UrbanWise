@@ -5,6 +5,7 @@ import {
   ACTIVITIES, PEOPLE, exposure, formatCigarettes, formatDuration, savingPercent,
 } from '../lib/exposure'
 import Icon3D from './Icon3D.vue'
+import InfoToggle from './InfoToggle.vue'
 
 const props = defineProps({
   air: { type: Object, default: null },
@@ -87,10 +88,13 @@ const bestLabel = (time) => relativeHour(time, props.now || props.air?.current?.
         <p v-if="saving && best" class="tip">
           Going at <strong>{{ bestLabel(best.time) }}</strong> instead would cut this by about <strong>{{ saving }}%</strong>.
         </p>
-        <p class="muted small footnote">
-          Based on the model's PM2.5 estimate for this hour ({{ Math.round(pm25Now) }} µg/m³). Rule of thumb from Berkeley Earth:
-          breathing 22 µg/m³ for a day ≈ 1 cigarette. An estimate, not medical advice.
-        </p>
+        <InfoToggle>
+          <p>
+            Uses the model's PM2.5 estimate for this hour ({{ Math.round(pm25Now) }} µg/m³) and Berkeley Earth's rule of
+            thumb: breathing 22 µg/m³ for a day ≈ 1 cigarette. Exercise and sensitivity factors are rough
+            approximations. An estimate, not medical advice.
+          </p>
+        </InfoToggle>
       </div>
     </div>
 

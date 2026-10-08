@@ -9,6 +9,7 @@ import ReplayBanner from '../components/ReplayBanner.vue'
 import ExposureCalculator from '../components/ExposureCalculator.vue'
 import ForecastChart from '../components/ForecastChart.vue'
 import Icon3D from '../components/Icon3D.vue'
+import InfoToggle from '../components/InfoToggle.vue'
 import SchoolModePanel from '../components/SchoolModePanel.vue'
 import SmokeAlertBanner from '../components/SmokeAlertBanner.vue'
 import SmokeForecastMap from '../components/SmokeForecastMap.vue'
@@ -289,7 +290,6 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
               <Icon3D name="chart_increasing" :size="40" />
               <h2>How School Mode decides</h2>
             </div>
-            <p class="muted small">UrbanWise's own guidance, based on India's CPCB AQI categories — not an official rule. Each activity is checked against the forecast AQI for its own hour.</p>
             <table class="rules">
               <thead><tr><th>AQI</th><th>GRAP</th><th>Decision</th></tr></thead>
               <tbody>
@@ -300,7 +300,13 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
                 </tr>
               </tbody>
             </table>
-            <p class="muted small">GRAP (Graded Response Action Plan) applies to Delhi-NCR only, so UrbanWise shows it only for cities within ~130 km of Delhi.</p>
+            <InfoToggle label="About these rules">
+              <p>
+                UrbanWise's own guidance, based on India's CPCB AQI categories — not an official CPCB or
+                school-board rule. Each activity is checked against the forecast AQI for its own hour.
+              </p>
+              <p>GRAP (Graded Response Action Plan) applies to Delhi-NCR only, so it's shown only for cities within ~130 km of Delhi.</p>
+            </InfoToggle>
           </aside>
           </div>
         </div>
@@ -312,22 +318,8 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
         </div>
 
         <!-- ASK -->
-        <div v-else key="ask" class="split">
+        <div v-else key="ask" class="grid narrow-ask">
           <AssistantPanel :place="place" :times="city.schoolTimes.value" class="tall" />
-          <aside class="card side">
-            <div class="card-head">
-              <Icon3D name="satellite" :size="40" />
-              <h2>What it knows</h2>
-            </div>
-            <p class="muted small">Answers come only from {{ place.name }}'s live data:</p>
-            <ul class="knows">
-              <li><Icon3D name="cloud" :size="26" :float="false" /> Air now and the 48-hour forecast</li>
-              <li><Icon3D name="school" :size="26" :float="false" /> School Mode for today and tomorrow</li>
-              <li><Icon3D name="fire" :size="26" :float="false" /> The Smoke Trail and fires on its path</li>
-              <li><Icon3D name="lungs" :size="26" :float="false" /> Exposure rule of thumb (cigarettes)</li>
-            </ul>
-            <p class="muted small">Tap 🎙 to ask by voice in English, हिंदी or ਪੰਜਾਬੀ, and 🔊 to hear the answer. Not medical advice.</p>
-          </aside>
         </div>
       </Transition>
     </div>
@@ -477,9 +469,7 @@ nav { display: grid; gap: 6px; }
 
 .sw { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 3px; }
 
-.knows { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: 0.92rem; }
-
-.knows li { display: flex; align-items: center; gap: 10px; }
+.narrow-ask { max-width: 820px; }
 
 .views {
   display: flex;

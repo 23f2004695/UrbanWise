@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Icon3D from './Icon3D.vue'
+import InfoToggle from './InfoToggle.vue'
 import { formatInZone } from '../lib/aqi'
 import { escapeHtml } from '../lib/html'
 import { forecastHeadline, localFiresNote } from '../lib/smokeForecast'
@@ -24,10 +25,6 @@ let layers = null
 const incoming = computed(() => props.data?.alert.incoming)
 const headline = computed(() => forecastHeadline(props.data, props.place.name, props.timeZone))
 const localNote = computed(() => localFiresNote(props.data))
-const arriving = computed(() => (props.data?.clusters || [])
-  .filter((c) => c.arrival_h != null && c.arrival_time)
-  .sort((a, b) => a.arrival_h - b.arrival_h))
-
 const HOT = '#E8590C'
 const COLD = '#9AA4B8'
 
@@ -35,6 +32,8 @@ function draw() {
   if (!map || !props.data) return
   layers.clearLayers()
   const bounds = L.latLngBounds([[props.place.lat, props.place.lon]])
+
+  const labelled = new Set()
 
   // Non-arriving paths first (underneath), faded.
   const sorted = [...(props.data.clusters || [])].filter((c) => c.path?.length).sort((a, b) => (a.arrival_h != null) - (b.arrival_h != null))
@@ -56,12 +55,16 @@ function draw() {
       (hits ? `Smoke may arrive ~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}` : `Passes ${escapeHtml(c.closest_km)} km away at closest`),
     ).addTo(layers)
     if (hits) {
-      // Label where the smoke first reaches the city.
-      const p = c.path.find(([, , h]) => h === c.arrival_h) || c.path.at(-1)
-      L.marker([p[0], p[1]], {
-        icon: L.divIcon({ className: 'eta', html: `~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}`, iconSize: null }),
-        interactive: false,
-      }).addTo(layers)
+      // Label where the smoke first reaches the city — once per arrival time.
+      const eta = formatInZone(c.arrival_time, props.timeZone)
+      if (!labelled.has(eta)) {
+        labelled.add(eta)
+        const p = c.path.find(([, , h]) => h === c.arrival_h) || c.path.at(-1)
+        L.marker([p[0], p[1]], {
+          icon: L.divIcon({ className: 'eta', html: `~${escapeHtml(eta)}`, iconSize: null }),
+          interactive: false,
+        }).addTo(layers)
+      }
       pts.forEach((pt) => bounds.extend(pt))
     }
     bounds.extend([c.lat, c.lon])
@@ -94,8 +97,10 @@ onBeforeUnmount(() => map?.remove())
     <div class="card-head">
       <Icon3D :name="incoming ? 'fire' : 'wind_face'" :size="48" />
       <div>
-        <h2 id="forecast-title">Incoming Smoke Alert</h2>
-        <p class="muted small">Today's fires, carried forward on the next 48 hours of forecast winds.</p>
+        <h2 id="forecast-title">
+          Incoming Smoke Alert
+          <span class="tag-estimate" title="Model estimate from forecast winds">estimate</span>
+        </h2>
       </div>
     </div>
 
@@ -105,27 +110,24 @@ onBeforeUnmount(() => map?.remove())
 
     <div v-if="data" class="summary" :class="{ incoming }" aria-live="polite">
       <p class="headline">{{ headline }}</p>
-      <ul v-if="arriving.length" class="arrivals">
-        <li v-for="c in arriving" :key="`${c.lat},${c.lon}`">
-          <strong>~{{ formatInZone(c.arrival_time, timeZone) }}</strong>
-          · {{ c.fires }} fires{{ c.district ? ` near ${c.district}, ${c.state}` : '' }}
-        </li>
-      </ul>
-      <p v-if="localNote" class="muted small">{{ localNote }}</p>
     </div>
     <p v-else-if="loading" class="muted">Running today's fires forward on the forecast winds…</p>
 
     <div ref="mapEl" class="map" role="region" :aria-label="headline || 'Map of forecast smoke paths'"></div>
 
     <div class="legend small muted">
-      <span><i class="line hot"></i>Smoke path reaching {{ place.name }}</span>
-      <span><i class="line cold"></i>Smoke path passing by</span>
-      <span><i class="dot"></i>Fire cluster (size = number of fires)</span>
+      <span><i class="line hot"></i>Reaches {{ place.name }}</span>
+      <span><i class="line cold"></i>Passes by</span>
+      <span><i class="dot"></i>Fire cluster</span>
     </div>
-    <p class="muted small footnote">
-      Forward trajectories from fires seen by NASA satellites in the last 36 hours, using forecast winds ~750 m up
-      (Open-Meteo). Shows smoke that <strong>may</strong> arrive — a model estimate, and forecasts can change.
-    </p>
+    <InfoToggle>
+      <p>
+        UrbanWise groups fires seen by NASA satellites (FIRMS VIIRS) in the last 36 hours and carries their smoke
+        forward on forecast winds ~750 m up (Open-Meteo) for 48 hours. It assumes the fires keep burning.
+      </p>
+      <p>A model estimate: smoke <strong>may</strong> arrive, and forecasts can change. Hover a fire cluster for its arrival time.</p>
+      <p v-if="localNote">{{ localNote }}</p>
+    </InfoToggle>
   </section>
 </template>
 
@@ -142,8 +144,6 @@ onBeforeUnmount(() => map?.remove())
 .summary p { margin: 0 0 4px; }
 
 .headline { font-size: 1.08rem; font-weight: 700; }
-
-.arrivals { margin: 6px 0; padding-left: 18px; }
 
 .map { height: 440px; border-radius: 12px; border: 1px solid var(--border); z-index: 0; }
 
@@ -177,8 +177,6 @@ onBeforeUnmount(() => map?.remove())
 .line.cold { border-color: #9AA4B8; }
 
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #E8590C; }
-
-.footnote { margin: 10px 0 0; }
 
 .error { display: flex; gap: 8px; align-items: center; color: #B42318; margin: 12px 0; }
 
