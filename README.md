@@ -118,10 +118,6 @@ cd backend && venv/bin/python -m pytest
 cd frontend && npx vitest run
 ```
 
-### Demo replay
-
-For the demo we captured real data on 8 Oct 2026 (NASA FIRMS, winds, air quality) for Delhi, Ludhiana and Chandigarh, because the FIRMS feed only keeps 48 hours. That data isn't stored in this repo. When it's available (in `backend/data/replay/`, or in S3 once deployed), open `/dashboard?replay=2026-10-08`. Replay is always clearly marked as not live.
-
 ---
 
 ## 📁 Project structure
