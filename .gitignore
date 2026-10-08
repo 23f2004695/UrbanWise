@@ -18,6 +18,3 @@ dist/
 .DS_Store
 .vscode/
 .idea/
-
-# Demo replay snapshot: real data, kept out of the repo (goes to S3 on deploy)
-backend/data/replay/

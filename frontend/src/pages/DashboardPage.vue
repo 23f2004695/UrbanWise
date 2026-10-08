@@ -5,7 +5,6 @@ import AirNowCard from '../components/AirNowCard.vue'
 import AssistantPanel from '../components/AssistantPanel.vue'
 import CircularDialog from '../components/CircularDialog.vue'
 import CitySearch from '../components/CitySearch.vue'
-import ReplayBanner from '../components/ReplayBanner.vue'
 import ExposureCalculator from '../components/ExposureCalculator.vue'
 import ForecastChart from '../components/ForecastChart.vue'
 import Icon3D from '../components/Icon3D.vue'
@@ -21,7 +20,6 @@ import { formatHour, grapStage, inDelhiNcr, relativeHour } from '../lib/aqi'
 import { daySummary } from '../lib/school'
 import { trailHeadline } from '../lib/smokeTrail'
 import { SECTIONS } from '../router'
-import { availableReplays, currentReplay, isReplayCity, loadAvailableReplays, replayDate, replayInfo } from '../lib/replay'
 
 const route = useRoute()
 const router = useRouter()
@@ -44,20 +42,7 @@ function placeFromQuery(q) {
 const query = computed(() => ({
   city: place.value.name, region: place.value.region || undefined,
   lat: place.value.lat, lon: place.value.lon,
-  replay: replayDate.value || undefined, // replay mode travels with every link
 }))
-
-// Demo replay (?replay=2026-10-08): only known snapshot dates, only their cities.
-const replayMissing = ref(false) // asked for a replay this server doesn't have
-
-function applyReplay(q) {
-  let date = replayInfo(q.replay) ? q.replay : ''
-  replayMissing.value = !!date && !availableReplays.value?.includes(date)
-  if (replayMissing.value) date = ''
-  replayDate.value = date
-  if (date && !isReplayCity(place.value, date)) place.value = { ...replayInfo(date).cities[0] }
-}
-const exitReplay = computed(() => ({ name: 'dashboard', params: route.params, query: { ...query.value, replay: undefined } }))
 
 function selectPlace(next) {
   city.selectPlace(next)
@@ -65,21 +50,15 @@ function selectPlace(next) {
   router.replace({ params: route.params, query: { ...route.query, ...query.value } })
 }
 
-onMounted(async () => {
-  if (route.query.replay) await loadAvailableReplays()
-  applyReplay(route.query)
+onMounted(() => {
   const fromUrl = placeFromQuery(route.query)
-  if (fromUrl && (!replayDate.value || isReplayCity(fromUrl, replayDate.value))) city.selectPlace(fromUrl)
+  if (fromUrl) city.selectPlace(fromUrl)
   else city.loadAll(true)
 })
 
 watch(() => route.query, (q) => {
-  const wasReplay = replayDate.value
-  applyReplay(q)
   const fromUrl = placeFromQuery(q)
-  if (fromUrl && (fromUrl.lat !== place.value.lat || fromUrl.lon !== place.value.lon)
-      && (!replayDate.value || isReplayCity(fromUrl, replayDate.value))) city.selectPlace(fromUrl)
-  else if (wasReplay !== replayDate.value) city.loadAll(true)
+  if (fromUrl && (fromUrl.lat !== place.value.lat || fromUrl.lon !== place.value.lon)) city.selectPlace(fromUrl)
 })
 
 // GRAP is a Delhi-NCR scheme: only show stages for cities in (approximate) NCR.
@@ -165,23 +144,10 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
         </RouterLink>
         <div class="title">
           <p class="eyebrow">{{ current?.label }}</p>
-          <h1>Air in {{ place.name }} <span v-if="currentReplay()" class="replay-pill">REPLAY · {{ currentReplay().label }}</span></h1>
+          <h1>Air in {{ place.name }}</h1>
         </div>
-        <CitySearch v-if="!replayDate" @select="selectPlace" />
+        <CitySearch @select="selectPlace" />
       </header>
-
-      <p v-if="replayMissing" class="card replay-missing" role="status">
-        Demo replay data isn't available on this server, so you're seeing live data.
-      </p>
-
-      <ReplayBanner
-        v-if="replayDate"
-        :date="replayDate"
-        :place="place"
-        :time-zone="timeZone"
-        :exit-to="exitReplay"
-        @select="selectPlace"
-      />
 
       <div v-if="city.airError.value" class="card error" role="alert">
         <strong>Couldn't load air quality for {{ place.name }}.</strong>
@@ -433,20 +399,6 @@ nav { display: grid; gap: 6px; }
   text-transform: uppercase;
 }
 
-.replay-missing { margin: 0; padding: 12px 16px; border-color: #E8C48A; background: #FFF7E0; }
-
-.replay-pill {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #B54708;
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
 
 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 

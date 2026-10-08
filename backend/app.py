@@ -11,7 +11,6 @@ from services.ai import MAX_MESSAGE_CHARS, assistant_reply, circular_facts, gene
 from services.air import UpstreamError, get_air, get_school_hours, search_places
 from services.context import city_context
 from services.errors import BadRequest
-from services import replay
 from services.ratelimit import RateLimiter
 from services.smoke_trail import get_smoke_forecast, get_smoke_trail
 from services.radar import get_radar
@@ -50,23 +49,6 @@ def _body():
     if not isinstance(body, dict):
         raise BadRequest("JSON body must be an object")
     return body
-
-
-def _replay_date(body=None):
-    """The demo-replay date if requested (?replay= or JSON "replay"), else None."""
-    value = (body or {}).get("replay") if body is not None else request.args.get("replay")
-    if value in (None, ""):
-        return None
-    if not isinstance(value, str):
-        raise BadRequest("replay must be a date string")
-    replay.marker(value)  # raises BadRequest for unknown dates
-    return value
-
-
-def _school_hours(lat, lon, replay_date):
-    if replay_date:
-        return replay.school_hours(replay_date, lat, lon)
-    return get_school_hours(lat, lon)
 
 
 def _times(body):
@@ -112,11 +94,6 @@ def bad_request(err):
     return jsonify(error=str(err)), 400
 
 
-@app.errorhandler(replay.ReplayNotFound)
-def replay_not_found(err):
-    return jsonify(error=str(err)), 404
-
-
 @app.errorhandler(HTTPException)
 def http_error(err):
     return jsonify(error=err.description), err.code
@@ -143,21 +120,15 @@ def health():
 @app.get("/api/air")
 def air():
     lat, lon = _coords()
-    if date := _replay_date():
-        return jsonify(replay.api(date, "air", lat, lon))
     return jsonify(get_air(lat, lon))
 
 
 @app.get("/api/school")
 def school():
     lat, lon = _coords()
-    replay_date = _replay_date()
-    hours, today = _school_hours(lat, lon, replay_date)
+    hours, today = get_school_hours(lat, lon)
     tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
-    body = {"days": school_plan(hours, [today, tomorrow], _slots())}
-    if replay_date:
-        body["_replay"] = replay.marker(replay_date)
-    return jsonify(body)
+    return jsonify(days=school_plan(hours, [today, tomorrow], _slots()))
 
 
 @app.post("/api/circular")
@@ -166,11 +137,10 @@ def circular():
     lat, lon = _coords(body)
     school_name = str(body.get("school_name") or "")[:80]
     slots = _slots(_times(body))
-    replay_date = _replay_date(body)
     if limited := _rate_limit("circular"):
         return limited
 
-    hours, today = _school_hours(lat, lon, replay_date)
+    hours, today = get_school_hours(lat, lon)
     tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
     wanted = body.get("date") or tomorrow
     if wanted not in (today, tomorrow):
@@ -195,11 +165,10 @@ def chat():
         raise BadRequest(f"message must be at most {MAX_MESSAGE_CHARS} characters")
     slots = _slots(_times(body))
     place_name = str(body.get("place_name") or "this city")[:80]
-    replay_date = _replay_date(body)
     if limited := _rate_limit("chat"):
         return limited
 
-    context = city_context(lat, lon, place_name, slots, replay_date=replay_date)
+    context = city_context(lat, lon, place_name, slots)
     result = assistant_reply(message, body.get("history"), context)
     for err in result.pop("errors", []):
         app.logger.warning("Assistant: %s", err)
@@ -209,30 +178,19 @@ def chat():
 @app.get("/api/smoke-forecast")
 def smoke_forecast():
     lat, lon = _coords()
-    if date := _replay_date():
-        return jsonify(replay.api(date, "smoke-forecast", lat, lon))
     return jsonify(get_smoke_forecast(lat, lon))
 
 
 @app.get("/api/radar")
 def radar():
     lat, lon = _coords()
-    if date := _replay_date():
-        return jsonify(replay.api(date, "radar", lat, lon))
     return jsonify(get_radar(lat, lon))
 
 
 @app.get("/api/smoke-trail")
 def smoke_trail():
     lat, lon = _coords()
-    if date := _replay_date():
-        return jsonify(replay.api(date, "smoke-trail", lat, lon))
     return jsonify(get_smoke_trail(lat, lon))
-
-
-@app.get("/api/replays")
-def replays():
-    return jsonify(dates=[replay.marker(d) | {"cities": replay._manifest(d)["cities"]} for d in replay.available()])
 
 
 @app.post("/api/speak")

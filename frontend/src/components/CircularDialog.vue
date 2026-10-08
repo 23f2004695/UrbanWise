@@ -2,7 +2,6 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { formatDay } from '../lib/aqi'
 import Icon3D from './Icon3D.vue'
-import { replayDate } from '../lib/replay'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -71,7 +70,6 @@ async function generate() {
         date: props.date,
         school_name: schoolName.value.trim(),
         times: props.times,
-        replay: replayDate.value || undefined,
       }),
     })
     const body = await res.json().catch(() => ({}))

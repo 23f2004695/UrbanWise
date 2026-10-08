@@ -125,9 +125,9 @@ cd frontend && npx vitest run
 ```
 backend/
   app.py              API routes
-  services/           air quality, School Mode, smoke trail/forecast/radar, AI, replay
+  services/           air quality, School Mode, smoke trail/forecast/radar, AI
   data/districts.json district names for labelling fires
-  scripts/            tools used to build the district list and capture the replay
+  scripts/            tool used to build the district list
   tests/
 frontend/
   src/pages/          landing page and dashboard

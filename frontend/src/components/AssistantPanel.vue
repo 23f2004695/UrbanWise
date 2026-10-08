@@ -2,7 +2,6 @@
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { VOICE_LANGS, canSpeak, getRecognition, speak, stopSpeaking } from '../lib/speech'
 import Icon3D from './Icon3D.vue'
-import { replayDate } from '../lib/replay'
 
 const props = defineProps({
   place: { type: Object, required: true },
@@ -88,7 +87,6 @@ async function send(text = draft.value) {
         message,
         history,
         times: props.times,
-        replay: replayDate.value || undefined,
       }),
     })
     const body = await res.json().catch(() => ({}))
