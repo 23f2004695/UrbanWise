@@ -1,0 +1,554 @@
+[
+ {
+  "district": "Amritsar",
+  "state": "Punjab",
+  "lat": 31.6223,
+  "lon": 74.8753
+ },
+ {
+  "district": "Barnala",
+  "state": "Punjab",
+  "lat": 30.3745,
+  "lon": 75.5487
+ },
+ {
+  "district": "Bathinda",
+  "state": "Punjab",
+  "lat": 30.2075,
+  "lon": 74.9389
+ },
+ {
+  "district": "Faridkot",
+  "state": "Punjab",
+  "lat": 30.674,
+  "lon": 74.7558
+ },
+ {
+  "district": "Fatehgarh Sahib",
+  "state": "Punjab",
+  "lat": 30.6432,
+  "lon": 76.3842
+ },
+ {
+  "district": "Fazilka",
+  "state": "Punjab",
+  "lat": 30.4021,
+  "lon": 74.0284
+ },
+ {
+  "district": "Ferozepur",
+  "state": "Punjab",
+  "lat": 30.9257,
+  "lon": 74.6131
+ },
+ {
+  "district": "Gurdaspur",
+  "state": "Punjab",
+  "lat": 32.0393,
+  "lon": 75.4032
+ },
+ {
+  "district": "Hoshiarpur",
+  "state": "Punjab",
+  "lat": 31.5372,
+  "lon": 75.9127
+ },
+ {
+  "district": "Jalandhar",
+  "state": "Punjab",
+  "lat": 31.3256,
+  "lon": 75.5792
+ },
+ {
+  "district": "Kapurthala",
+  "state": "Punjab",
+  "lat": 31.3801,
+  "lon": 75.3811
+ },
+ {
+  "district": "Ludhiana",
+  "state": "Punjab",
+  "lat": 30.912,
+  "lon": 75.8538
+ },
+ {
+  "district": "Malerkotla",
+  "state": "Punjab",
+  "lat": 30.5309,
+  "lon": 75.8795
+ },
+ {
+  "district": "Mansa",
+  "state": "Punjab",
+  "lat": 29.9884,
+  "lon": 75.4017
+ },
+ {
+  "district": "Moga",
+  "state": "Punjab",
+  "lat": 30.8138,
+  "lon": 75.1688
+ },
+ {
+  "district": "Sri Muktsar Sahib",
+  "state": "Punjab",
+  "lat": 30.4743,
+  "lon": 74.5166
+ },
+ {
+  "district": "Pathankot",
+  "state": "Punjab",
+  "lat": 32.2748,
+  "lon": 75.6529
+ },
+ {
+  "district": "Patiala",
+  "state": "Punjab",
+  "lat": 30.3362,
+  "lon": 76.3922
+ },
+ {
+  "district": "Rupnagar",
+  "state": "Punjab",
+  "lat": 30.969,
+  "lon": 76.5269
+ },
+ {
+  "district": "SAS Nagar (Mohali)",
+  "state": "Punjab",
+  "lat": 30.68,
+  "lon": 76.7221
+ },
+ {
+  "district": "Sangrur",
+  "state": "Punjab",
+  "lat": 30.2451,
+  "lon": 75.8449
+ },
+ {
+  "district": "Shaheed Bhagat Singh Nagar",
+  "state": "Punjab",
+  "lat": 31.1245,
+  "lon": 76.1161
+ },
+ {
+  "district": "Tarn Taran",
+  "state": "Punjab",
+  "lat": 31.4519,
+  "lon": 74.9278
+ },
+ {
+  "district": "Ambala",
+  "state": "Haryana",
+  "lat": 30.361,
+  "lon": 76.7978
+ },
+ {
+  "district": "Bhiwani",
+  "state": "Haryana",
+  "lat": 28.793,
+  "lon": 76.1397
+ },
+ {
+  "district": "Charkhi Dadri",
+  "state": "Haryana",
+  "lat": 28.5917,
+  "lon": 76.2716
+ },
+ {
+  "district": "Faridabad",
+  "state": "Haryana",
+  "lat": 28.4112,
+  "lon": 77.3132
+ },
+ {
+  "district": "Fatehabad",
+  "state": "Haryana",
+  "lat": 29.5153,
+  "lon": 75.4555
+ },
+ {
+  "district": "Gurugram",
+  "state": "Haryana",
+  "lat": 28.4601,
+  "lon": 77.0263
+ },
+ {
+  "district": "Hisar",
+  "state": "Haryana",
+  "lat": 29.1539,
+  "lon": 75.7229
+ },
+ {
+  "district": "Jhajjar",
+  "state": "Haryana",
+  "lat": 28.6063,
+  "lon": 76.6565
+ },
+ {
+  "district": "Jind",
+  "state": "Haryana",
+  "lat": 29.3158,
+  "lon": 76.315
+ },
+ {
+  "district": "Kaithal",
+  "state": "Haryana",
+  "lat": 29.8015,
+  "lon": 76.3996
+ },
+ {
+  "district": "Karnal",
+  "state": "Haryana",
+  "lat": 29.692,
+  "lon": 76.9845
+ },
+ {
+  "district": "Kurukshetra",
+  "state": "Haryana",
+  "lat": 29.9732,
+  "lon": 76.8321
+ },
+ {
+  "district": "Mahendragarh",
+  "state": "Haryana",
+  "lat": 28.0444,
+  "lon": 76.1083
+ },
+ {
+  "district": "Nuh",
+  "state": "Haryana",
+  "lat": 28.103,
+  "lon": 77.0014
+ },
+ {
+  "district": "Palwal",
+  "state": "Haryana",
+  "lat": 28.1447,
+  "lon": 77.3255
+ },
+ {
+  "district": "Panchkula",
+  "state": "Haryana",
+  "lat": 30.6946,
+  "lon": 76.8504
+ },
+ {
+  "district": "Panipat",
+  "state": "Haryana",
+  "lat": 29.3875,
+  "lon": 76.9682
+ },
+ {
+  "district": "Rewari",
+  "state": "Haryana",
+  "lat": 28.199,
+  "lon": 76.6183
+ },
+ {
+  "district": "Rohtak",
+  "state": "Haryana",
+  "lat": 28.8945,
+  "lon": 76.5892
+ },
+ {
+  "district": "Sirsa",
+  "state": "Haryana",
+  "lat": 29.5349,
+  "lon": 75.029
+ },
+ {
+  "district": "Sonipat",
+  "state": "Haryana",
+  "lat": 28.9948,
+  "lon": 77.0194
+ },
+ {
+  "district": "Yamunanagar",
+  "state": "Haryana",
+  "lat": 30.128,
+  "lon": 77.2837
+ },
+ {
+  "district": "Delhi",
+  "state": "Delhi",
+  "lat": 28.6519,
+  "lon": 77.2315
+ },
+ {
+  "district": "Aligarh",
+  "state": "Uttar Pradesh",
+  "lat": 27.8815,
+  "lon": 78.0746
+ },
+ {
+  "district": "Baghpat",
+  "state": "Uttar Pradesh",
+  "lat": 28.9448,
+  "lon": 77.2186
+ },
+ {
+  "district": "Bulandshahr",
+  "state": "Uttar Pradesh",
+  "lat": 28.4039,
+  "lon": 77.8577
+ },
+ {
+  "district": "Ghaziabad",
+  "state": "Uttar Pradesh",
+  "lat": 28.6654,
+  "lon": 77.4391
+ },
+ {
+  "district": "Mathura",
+  "state": "Uttar Pradesh",
+  "lat": 27.5035,
+  "lon": 77.6722
+ },
+ {
+  "district": "Meerut",
+  "state": "Uttar Pradesh",
+  "lat": 28.98,
+  "lon": 77.7064
+ },
+ {
+  "district": "Muzaffarnagar",
+  "state": "Uttar Pradesh",
+  "lat": 29.4709,
+  "lon": 77.7033
+ },
+ {
+  "district": "Saharanpur",
+  "state": "Uttar Pradesh",
+  "lat": 29.9679,
+  "lon": 77.5452
+ },
+ {
+  "district": "Shamli",
+  "state": "Uttar Pradesh",
+  "lat": 29.4497,
+  "lon": 77.3096
+ },
+ {
+  "district": "Sri Ganganagar",
+  "state": "Rajasthan",
+  "lat": 29.9201,
+  "lon": 73.875
+ },
+ {
+  "district": "Hanumangarh",
+  "state": "Rajasthan",
+  "lat": 29.5818,
+  "lon": 74.3294
+ },
+ {
+  "district": "Bikaner",
+  "state": "Rajasthan",
+  "lat": 28.0176,
+  "lon": 73.3149
+ },
+ {
+  "district": "Churu",
+  "state": "Rajasthan",
+  "lat": 28.3041,
+  "lon": 74.9672
+ },
+ {
+  "district": "Jhunjhunu",
+  "state": "Rajasthan",
+  "lat": 28.1256,
+  "lon": 75.398
+ },
+ {
+  "district": "Sikar",
+  "state": "Rajasthan",
+  "lat": 27.6121,
+  "lon": 75.14
+ },
+ {
+  "district": "Nagaur",
+  "state": "Rajasthan",
+  "lat": 27.202,
+  "lon": 73.7339
+ },
+ {
+  "district": "Jodhpur",
+  "state": "Rajasthan",
+  "lat": 26.2684,
+  "lon": 73.0059
+ },
+ {
+  "district": "Phalodi",
+  "state": "Rajasthan",
+  "lat": 27.131,
+  "lon": 72.3683
+ },
+ {
+  "district": "Jaisalmer",
+  "state": "Rajasthan",
+  "lat": 26.9176,
+  "lon": 70.9039
+ },
+ {
+  "district": "Barmer",
+  "state": "Rajasthan",
+  "lat": 25.7457,
+  "lon": 71.3921
+ },
+ {
+  "district": "Pali",
+  "state": "Rajasthan",
+  "lat": 25.7728,
+  "lon": 73.3234
+ },
+ {
+  "district": "Ajmer",
+  "state": "Rajasthan",
+  "lat": 26.4521,
+  "lon": 74.6387
+ },
+ {
+  "district": "Jaipur",
+  "state": "Rajasthan",
+  "lat": 26.9196,
+  "lon": 75.7878
+ },
+ {
+  "district": "Alwar",
+  "state": "Rajasthan",
+  "lat": 27.5625,
+  "lon": 76.625
+ },
+ {
+  "district": "Bharatpur",
+  "state": "Rajasthan",
+  "lat": 27.2173,
+  "lon": 77.4901
+ },
+ {
+  "district": "Tonk",
+  "state": "Rajasthan",
+  "lat": 26.1664,
+  "lon": 75.7882
+ },
+ {
+  "district": "Kota",
+  "state": "Rajasthan",
+  "lat": 25.1825,
+  "lon": 75.8391
+ },
+ {
+  "district": "Agra",
+  "state": "Uttar Pradesh",
+  "lat": 27.1833,
+  "lon": 78.0167
+ },
+ {
+  "district": "Moradabad",
+  "state": "Uttar Pradesh",
+  "lat": 28.8389,
+  "lon": 78.7768
+ },
+ {
+  "district": "Bijnor",
+  "state": "Uttar Pradesh",
+  "lat": 29.373,
+  "lon": 78.1364
+ },
+ {
+  "district": "Bareilly",
+  "state": "Uttar Pradesh",
+  "lat": 28.3668,
+  "lon": 79.4317
+ },
+ {
+  "district": "Gwalior",
+  "state": "Madhya Pradesh",
+  "lat": 26.2298,
+  "lon": 78.1734
+ },
+ {
+  "district": "Morena",
+  "state": "Madhya Pradesh",
+  "lat": 26.4989,
+  "lon": 77.9953
+ },
+ {
+  "district": "Lahore",
+  "state": "Punjab (Pakistan)",
+  "lat": 31.558,
+  "lon": 74.3507
+ },
+ {
+  "district": "Kasur",
+  "state": "Punjab (Pakistan)",
+  "lat": 31.1187,
+  "lon": 74.4502
+ },
+ {
+  "district": "Okara",
+  "state": "Punjab (Pakistan)",
+  "lat": 30.8103,
+  "lon": 73.4515
+ },
+ {
+  "district": "Sahiwal",
+  "state": "Punjab (Pakistan)",
+  "lat": 30.6659,
+  "lon": 73.1019
+ },
+ {
+  "district": "Pakpattan",
+  "state": "Punjab (Pakistan)",
+  "lat": 30.3431,
+  "lon": 73.3894
+ },
+ {
+  "district": "Bahawalnagar",
+  "state": "Punjab (Pakistan)",
+  "lat": 29.9983,
+  "lon": 73.2527
+ },
+ {
+  "district": "Vehari",
+  "state": "Punjab (Pakistan)",
+  "lat": 30.0445,
+  "lon": 72.3556
+ },
+ {
+  "district": "Bahawalpur",
+  "state": "Punjab (Pakistan)",
+  "lat": 29.3978,
+  "lon": 71.6752
+ },
+ {
+  "district": "Multan",
+  "state": "Punjab (Pakistan)",
+  "lat": 30.1968,
+  "lon": 71.4782
+ },
+ {
+  "district": "Faisalabad",
+  "state": "Punjab (Pakistan)",
+  "lat": 31.4155,
+  "lon": 73.0897
+ },
+ {
+  "district": "Gujranwala",
+  "state": "Punjab (Pakistan)",
+  "lat": 32.1557,
+  "lon": 74.187
+ },
+ {
+  "district": "Sialkot",
+  "state": "Punjab (Pakistan)",
+  "lat": 32.4927,
+  "lon": 74.5313
+ },
+ {
+  "district": "Narowal",
+  "state": "Punjab (Pakistan)",
+  "lat": 32.102,
+  "lon": 74.873
+ }
+]

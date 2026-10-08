@@ -1,0 +1,236 @@
+{
+ "kind": "UrbanWise demo replay snapshot — NOT live data",
+ "captured_at_utc": "2026-10-08T12:09:44+00:00",
+ "cities": {
+  "delhi": {
+   "name": "New Delhi",
+   "region": "Delhi",
+   "lat": 28.6139,
+   "lon": 77.209
+  },
+  "ludhiana": {
+   "name": "Ludhiana",
+   "region": "Punjab",
+   "lat": 30.912,
+   "lon": 75.8538
+  },
+  "chandigarh": {
+   "name": "Chandigarh",
+   "region": "Chandigarh",
+   "lat": 30.7363,
+   "lon": 76.7884
+  }
+ },
+ "api": {
+  "delhi.air": "delhi.air.json",
+  "delhi.school": "delhi.school.json",
+  "delhi.smoke-trail": "delhi.smoke-trail.json",
+  "delhi.smoke-forecast": "delhi.smoke-forecast.json",
+  "delhi.radar": "delhi.radar.json",
+  "ludhiana.air": "ludhiana.air.json",
+  "ludhiana.school": "ludhiana.school.json",
+  "ludhiana.smoke-trail": "ludhiana.smoke-trail.json",
+  "ludhiana.smoke-forecast": "ludhiana.smoke-forecast.json",
+  "ludhiana.radar": "ludhiana.radar.json",
+  "chandigarh.air": "chandigarh.air.json",
+  "chandigarh.school": "chandigarh.school.json",
+  "chandigarh.smoke-trail": "chandigarh.smoke-trail.json",
+  "chandigarh.smoke-forecast": "chandigarh.smoke-forecast.json",
+  "chandigarh.radar": "chandigarh.radar.json"
+ },
+ "raw": [
+  {
+   "file": "raw/00.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 28.61,
+    "longitude": 77.21,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "66b056027bbeea124b86b7406a6419f06eae7482fba907c3c21def1206cd5edb"
+  },
+  {
+   "file": "raw/01.json",
+   "url": "https://api.open-meteo.com/v1/forecast",
+   "params": {
+    "latitude": "23.0,23.0,23.0,23.0,23.0,23.0,23.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,27.0,27.0,27.0,27.0,27.0,27.0,27.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,31.0,31.0,31.0,31.0,31.0,31.0,31.0,33.0,33.0,33.0,33.0,33.0,33.0,33.0,35.0,35.0,35.0,35.0,35.0,35.0,35.0",
+    "longitude": "71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0",
+    "hourly": "wind_speed_925hPa,wind_direction_925hPa",
+    "wind_speed_unit": "kmh",
+    "timezone": "UTC",
+    "past_days": 2,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "dbcee1c6088aa785e4b625fc53e47f1a0986930dbbc4e12782682367ab51a790"
+  },
+  {
+   "file": "raw/02.csv",
+   "url": "https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_South_Asia_48h.csv",
+   "params": null,
+   "status": 200,
+   "sha256": "ff68791bdbea902dc7dffc5988887a3833fd0f91f7ab2a1af8de6e697f7663cb"
+  },
+  {
+   "file": "raw/03.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 28.62,
+    "longitude": 77.21,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "3277b525887f98bde977229344dd645e73120b98284b3876d6bab3c3299c9b0e"
+  },
+  {
+   "file": "raw/04.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 25.59,
+    "longitude": 85.14,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "b1b00db4b4f1d1a1aae4fa2e82a5965af7975451642f8314e670e6ae01d4b310"
+  },
+  {
+   "file": "raw/05.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 30.74,
+    "longitude": 76.79,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "47615dc015d51e120845086031c4bda1415f9d88dac00df4772005635029363e"
+  },
+  {
+   "file": "raw/06.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 26.47,
+    "longitude": 80.35,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "5b31cb93710f5ee08be4794900b1fc27093011a9e4cab96adafb6ad7d26163aa"
+  },
+  {
+   "file": "raw/07.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 26.92,
+    "longitude": 75.79,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "923fff56c3526f613588561c03934345911d5c73e28902fb67d03e5449ca0831"
+  },
+  {
+   "file": "raw/08.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 30.91,
+    "longitude": 75.85,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "732799dbd39e4544d0b64a7905f1a1a9f530a1d1e978601b5a0dc4826d8bfbcc"
+  },
+  {
+   "file": "raw/09.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 26.84,
+    "longitude": 80.92,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "b5ebb638ae42fb8bee5b6b01d8d11519076e671527a8bade2ef0913e9eaaad0d"
+  },
+  {
+   "file": "raw/10.json",
+   "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+   "params": {
+    "latitude": 31.62,
+    "longitude": 74.88,
+    "current": "pm2_5,pm10",
+    "hourly": "pm2_5,pm10",
+    "timezone": "auto",
+    "past_days": 1,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "b7ba4a9301943dee3860f98f9d1c1601508e8061cae92a537bda94af2cb30154"
+  },
+  {
+   "file": "raw/11.json",
+   "url": "https://api.open-meteo.com/v1/forecast",
+   "params": {
+    "latitude": "25.0,25.0,25.0,25.0,25.0,25.0,25.0,27.0,27.0,27.0,27.0,27.0,27.0,27.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,31.0,31.0,31.0,31.0,31.0,31.0,31.0,33.0,33.0,33.0,33.0,33.0,33.0,33.0,35.0,35.0,35.0,35.0,35.0,35.0,35.0,37.0,37.0,37.0,37.0,37.0,37.0,37.0",
+    "longitude": "70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0,70.0,72.0,74.0,76.0,78.0,80.0,82.0",
+    "hourly": "wind_speed_925hPa,wind_direction_925hPa",
+    "wind_speed_unit": "kmh",
+    "timezone": "UTC",
+    "past_days": 2,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "1585399ead32780a0d6bed213f77b653b856cd3f6a8f3c8d1f9605dbdd9d134f"
+  },
+  {
+   "file": "raw/12.json",
+   "url": "https://api.open-meteo.com/v1/forecast",
+   "params": {
+    "latitude": "25.0,25.0,25.0,25.0,25.0,25.0,25.0,27.0,27.0,27.0,27.0,27.0,27.0,27.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,31.0,31.0,31.0,31.0,31.0,31.0,31.0,33.0,33.0,33.0,33.0,33.0,33.0,33.0,35.0,35.0,35.0,35.0,35.0,35.0,35.0,37.0,37.0,37.0,37.0,37.0,37.0,37.0",
+    "longitude": "71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0,71.0,73.0,75.0,77.0,79.0,81.0,83.0",
+    "hourly": "wind_speed_925hPa,wind_direction_925hPa",
+    "wind_speed_unit": "kmh",
+    "timezone": "UTC",
+    "past_days": 2,
+    "forecast_days": 3
+   },
+   "status": 200,
+   "sha256": "6372fbac0b30d5f376b5cabd4479e2ba8e602e21335ae37dde6034c93f5a03c0"
+  }
+ ],
+ "sources": {
+  "air_quality": "Open-Meteo Air Quality API (CAMS global model estimates)",
+  "wind": "Open-Meteo Forecast API, 925 hPa winds (model)",
+  "fires": "NASA FIRMS, VIIRS S-NPP NRT, South Asia 48 h (satellite thermal anomalies)"
+ },
+ "note": "Outputs were produced by UrbanWise's own code at capture time. Smoke paths and arrival times are model-based estimates."
+}
