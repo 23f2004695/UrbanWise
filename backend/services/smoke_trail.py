@@ -397,5 +397,5 @@ def get_smoke_forecast(lat, lon, now=None):
         "generated_at": now.isoformat(),
         **result,
         "method": "Forward trajectories from today's fire clusters using forecast winds ~750 m up "
-                  "(Open-Meteo). Shows smoke that is likely to arrive, not a guarantee.",
+                  "(Open-Meteo). Shows smoke that may arrive (model estimate), not a guarantee.",
     }

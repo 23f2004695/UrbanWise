@@ -53,7 +53,7 @@ function draw() {
       color: '#FFFFFF', weight: 2, fillColor: hits ? HOT : '#F5A06A', fillOpacity: 0.95,
     }).bindTooltip(
       `<strong>${escapeHtml(c.fires)} fires</strong>${c.district ? ` near ${escapeHtml(c.district)}, ${escapeHtml(c.state)}` : ''}<br>` +
-      (hits ? `Smoke likely arrives ~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}` : `Passes ${escapeHtml(c.closest_km)} km away at closest`),
+      (hits ? `Smoke may arrive ~${escapeHtml(formatInZone(c.arrival_time, props.timeZone))}` : `Passes ${escapeHtml(c.closest_km)} km away at closest`),
     ).addTo(layers)
     if (hits) {
       // Label where the smoke first reaches the city.
@@ -124,7 +124,7 @@ onBeforeUnmount(() => map?.remove())
     </div>
     <p class="muted small footnote">
       Forward trajectories from fires seen by NASA satellites in the last 36 hours, using forecast winds ~750 m up
-      (Open-Meteo). Shows smoke that is <strong>likely</strong> to arrive — forecasts can change.
+      (Open-Meteo). Shows smoke that <strong>may</strong> arrive — a model estimate, and forecasts can change.
     </p>
   </section>
 </template>
