@@ -3,6 +3,8 @@
 > **A bad-air-day assistant for Indian cities**, built for **Environmental Hacks Track 1 (Air)**.
 > Most AQI apps only tell you *what* the air is like. **UrbanWise** also shows *where the smoke is coming from*, *whether more is on the way*, and *what to do about it*.
 
+![UrbanWise landing page](docs/screenshots/landing.jpg)
+
 ---
 
 ## 🚨 The Problem
@@ -42,6 +44,20 @@ Every winter, Delhi-NCR and other North Indian cities spend weeks with **"Very P
 * 🪟 **Ventilation Window**: the cleanest hours today to open windows.
 * 🎙️ **Ask UrbanWise**: questions by voice or text in English, हिंदी or ਪੰਜਾਬੀ, answered from the city's data (with read-aloud).
 * 😶‍🌫️ **Smog Vision**: an AQI slider that fills a 3D city with matching haze.
+
+---
+
+## 📸 Screenshots
+
+Taken on 8 Oct 2026 with live data.
+
+| Dashboard | Incoming Smoke Alert |
+| :---: | :---: |
+| ![Dashboard overview for New Delhi](docs/screenshots/dashboard.jpg) | ![Smoke from fires near Phalodi forecast to reach New Delhi](docs/screenshots/incoming-smoke.jpg) |
+| **Smoke Radar** | **School Mode** |
+| ![48-hour time-lapse of fires, wind and smoke](docs/screenshots/smoke-radar.jpg) | ![School Mode guidance for assembly, PE and dismissal](docs/screenshots/school-mode.jpg) |
+| **Smog Vision** | **On a phone** |
+| ![3D city at AQI 450](docs/screenshots/smog-vision.jpg) | <img src="docs/screenshots/phone.jpg" alt="Dashboard on a phone" width="300"> |
 
 ---
 
@@ -122,6 +138,7 @@ frontend/
   src/components/     cards, maps, radar, 3D scene
   src/lib/            calculations and helpers (with tests)
   public/3d/          3D icons
+docs/screenshots/     images used in this README
 ```
 
 ---
