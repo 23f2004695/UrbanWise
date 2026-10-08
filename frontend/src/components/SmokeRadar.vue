@@ -9,7 +9,6 @@ import Icon3D from './Icon3D.vue'
 import InfoToggle from './InfoToggle.vue'
 import { aqiCategory, categoryStyle, formatInZone } from '../lib/aqi'
 import { escapeHtml } from '../lib/html'
-import { replayDate } from '../lib/replay'
 import { advect, gridBounds, windAt } from '../lib/radar'
 
 const props = defineProps({
@@ -51,7 +50,7 @@ const clock = computed(() => (frames.value.length ? formatInZone(`${frames.value
 const phase = computed(() => {
   if (!frames.value.length) return ''
   const d = frameIndex.value - nowIndex.value
-  if (d === 0) return replayDate.value ? 'Snapshot time' : 'Now'
+  if (d === 0) return 'Now'
   return d < 0 ? `${-d} h ago` : `Forecast · in ${d} h`
 })
 const firesSeen = computed(() => (radar.value?.fires || []).filter((f) => f.t <= frame.value).length)
@@ -69,7 +68,6 @@ async function load() {
   const want = `${props.place.lat},${props.place.lon}`
   try {
     const params = new URLSearchParams({ lat: props.place.lat, lon: props.place.lon })
-    if (replayDate.value) params.set('replay', replayDate.value)
     const res = await fetch(`/api/radar?${params}`)
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`)
@@ -324,7 +322,7 @@ onMounted(() => {
   load()
 })
 
-watch(() => [props.place, replayDate.value], load)
+watch(() => props.place, load)
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)

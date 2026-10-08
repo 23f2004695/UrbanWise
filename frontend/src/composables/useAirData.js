@@ -38,11 +38,8 @@ function useLatest(fetcher) {
   return { data, loading, error, load }
 }
 
-// `place.replay` (a date) asks for the demo-replay snapshot instead of live data.
 function query(place, extra = {}) {
-  const params = new URLSearchParams({ lat: place.lat, lon: place.lon, ...extra })
-  if (place.replay) params.set('replay', place.replay)
-  return params
+  return new URLSearchParams({ lat: place.lat, lon: place.lon, ...extra })
 }
 
 export function useAirData() {

@@ -249,7 +249,7 @@ def test_chat_endpoint(monkeypatch):
 
     seen = {}
     monkeypatch.setattr(app_module, "city_context",
-                        lambda lat, lon, name, slots, replay_date=None: {"city": name, "pe": slots[1]["time"]})
+                        lambda lat, lon, name, slots: {"city": name, "pe": slots[1]["time"]})
 
     def fake_reply(message, history, context):
         seen.update(message=message, history=history, context=context)
