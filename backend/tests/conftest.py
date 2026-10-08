@@ -12,6 +12,6 @@ import pytest
 def _reset_rate_limits():
     """Rate limiters are process-wide; start every test with a clean slate."""
     import app as app_module
-    for limiter in app_module.LIMITS.values():
+    for limiter in [*app_module.LIMITS.values(), *app_module.TOTAL_LIMITS.values()]:
         limiter._hits.clear()
     yield

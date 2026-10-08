@@ -154,3 +154,29 @@ def test_best_hour_window_is_24_hours_even_with_gaps():
     raw["hourly"]["pm2_5"][times.index("2026-10-10T15:00")] = 5   # > 24 h after 10:00 on the 9th
     report = air.build_air_report(raw)
     assert report["best_hour"]["time"] != "2026-10-10T15:00"
+
+
+def test_faked_forwarded_header_does_not_dodge_the_limit(client, monkeypatch):
+    # Locally no proxy is trusted, so a made-up X-Forwarded-For changes nothing.
+    monkeypatch.setattr(app_module, "synthesize", lambda text: (b"RIFF", []))
+    codes = [client.post("/api/speak", json={"text": f"t{i}"},
+                         headers={"X-Forwarded-For": f"10.0.0.{i}"}).status_code for i in range(12)]
+    assert codes[10:] == [429, 429]
+
+
+def test_behind_a_proxy_the_address_it_added_is_used(client, monkeypatch):
+    monkeypatch.setattr(app_module, "TRUSTED_PROXIES", 1)
+    with app_module.app.test_request_context(headers={"X-Forwarded-For": "6.6.6.6, 203.0.113.9"}):
+        assert app_module._client_id() == "203.0.113.9"   # not the visitor-supplied 6.6.6.6
+    with app_module.app.test_request_context(environ_base={"REMOTE_ADDR": "127.0.0.1"}):
+        assert app_module._client_id() == "127.0.0.1"     # header missing: fall back
+
+
+def test_total_limit_caps_everyone_together(client, monkeypatch):
+    monkeypatch.setattr(app_module, "synthesize", lambda text: (b"RIFF", []))
+    monkeypatch.setitem(app_module.TOTAL_LIMITS, "speak", ratelimit.RateLimiter(3, 3600))
+    monkeypatch.setattr(app_module, "TRUSTED_PROXIES", 1)
+    codes = [client.post("/api/speak", json={"text": f"t{i}"},
+                         headers={"X-Forwarded-For": f"203.0.113.{i}"}).status_code for i in range(5)]
+    assert codes == [200, 200, 200, 429, 429]
+    assert "busy" in client.post("/api/speak", json={"text": "x"}).get_json()["error"]
