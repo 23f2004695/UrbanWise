@@ -18,18 +18,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import requests  # noqa: E402
+
 from services.smoke_trail import (  # noqa: E402
-    WIND_URL, WindGrid, _get_json_with_retry, _grid_axis, back_trajectory, haversine_km,
+    WIND_URL, WindGrid, _grid_axis, back_trajectory, haversine_km,
 )
 
 CHECK_HOURS = [6, 12, 24, 36, 48]
 
 
-def wind_grid_for(lat, lon, start):
-    """Same grid as the app, but for a fixed window ending at `start`."""
+def wind_grid_for(lat, lon, start, model=None):
+    """Same grid as the app, but for a fixed window ending at `start`.
+
+    model=None uses the app's default (Open-Meteo best match); "gfs_seamless"
+    uses the same weather model as HYSPLIT's GFS runs.
+    """
     lats, lons = _grid_axis(float(round(lat))), _grid_axis(float(round(lon)))
     points = [(la, lo) for la in lats for lo in lons]
-    body = _get_json_with_retry(WIND_URL, {
+    params = {
         "latitude": ",".join(str(p[0]) for p in points),
         "longitude": ",".join(str(p[1]) for p in points),
         "hourly": "wind_speed_925hPa,wind_direction_925hPa",
@@ -37,7 +43,13 @@ def wind_grid_for(lat, lon, start):
         "timezone": "UTC",
         "start_date": (start - timedelta(days=2)).date().isoformat(),
         "end_date": start.date().isoformat(),
-    }, "Open-Meteo wind")
+    }
+    if model:
+        params["models"] = model
+    # One-off script, so it can wait longer than the app does.
+    res = requests.get(WIND_URL, params=params, timeout=90)
+    res.raise_for_status()
+    body = res.json()
     samples = {
         (n // len(lons), n % len(lons)): (loc["hourly"]["wind_speed_925hPa"], loc["hourly"]["wind_direction_925hPa"])
         for n, loc in enumerate(body)
@@ -96,7 +108,9 @@ def svg(name, ours, theirs, city):
         + marks([(p[2], (p[0], p[1])) for p in ours], "#C2410C")
         + marks(hy, "#1D4ED8")
         + f'<circle cx="{cx}" cy="{cy}" r="5" fill="#111"/>'
-        f'<text x="{cx + 7}" y="{cy + 4}" font-size="12" font-weight="bold">{name}</text>'
+        # Name goes on whichever side of the dot has room.
+        + (f'<text x="{cx - 8}" y="{cy - 8}" text-anchor="end"' if cx > w * 0.7 else f'<text x="{cx + 7}" y="{cy + 4}"')
+        + f' font-size="12" font-weight="bold">{name}</text>'
         f'<text x="8" y="{h + 20}" font-size="12"><tspan fill="#C2410C">— UrbanWise</tspan>'
         f'<tspan fill="#1D4ED8" dx="14">- - NOAA HYSPLIT</tspan>'
         f'<tspan fill="#555" dx="14">lat {lat_lo:.1f}–{lat_hi:.1f}, lon {lon_lo:.1f}–{lon_hi:.1f}</tspan></text>'
@@ -112,10 +126,11 @@ def main():
     ap.add_argument("--start", required=True, help="UTC hour, e.g. 2026-10-08T12")
     ap.add_argument("--hysplit", required=True, help="HYSPLIT tdump text file")
     ap.add_argument("--svg", help="write a comparison plot here")
+    ap.add_argument("--model", help='Open-Meteo weather model, e.g. gfs_seamless (default: the app\'s best match)')
     args = ap.parse_args()
 
     start = datetime.strptime(args.start, "%Y-%m-%dT%H").replace(tzinfo=timezone.utc)
-    ours = back_trajectory(args.lat, args.lon, wind_grid_for(args.lat, args.lon, start), start)
+    ours = back_trajectory(args.lat, args.lon, wind_grid_for(args.lat, args.lon, start, args.model), start)
     theirs = read_tdump(args.hysplit)
     by_hour = {p[2]: (p[0], p[1]) for p in ours}
 
@@ -126,7 +141,7 @@ def main():
         else:
             cells.append("n/a")
     ours_len = sum(haversine_km(a[0], a[1], b[0], b[1]) for a, b in zip(ours, ours[1:]))
-    print(f"| {args.name} | {args.start}Z | " + " | ".join(cells) + f" | {round(ours_len)} km |")
+    print(f"| {args.name} | {args.model or 'best match (app)'} | " + " | ".join(cells) + f" | {round(ours_len)} km |")
 
     if args.svg:
         Path(args.svg).write_text(svg(args.name, ours, theirs, (args.lat, args.lon)))

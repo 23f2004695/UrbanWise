@@ -86,4 +86,4 @@ Text from a language model can still be wrong, so the principal should review a 
 
 ## Validation
 
-See [VALIDATION.md](VALIDATION.md) for how our trajectories compare with NOAA HYSPLIT.
+We compared our trajectories with NOAA HYSPLIT for Delhi, Ludhiana and Chandigarh. Short version: on the same winds our path stays close for the first few hours but drifts after that, mostly because of the coarse 2° wind grid, and two different weather models can send the air in very different directions. The smoke alert agreed across three weather models; the Smoke Trail's named fires did not. Details in [VALIDATION.md](VALIDATION.md).
