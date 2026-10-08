@@ -17,6 +17,19 @@ export const REPLAYS = {
 // '' = live data; otherwise a key of REPLAYS.
 export const replayDate = ref('')
 
+// Which snapshots the backend actually has. The data isn't in the git repo
+// (it's served from S3 when deployed), so a fresh clone may have none.
+export const availableReplays = ref(null) // null = not checked yet
+let checking = null
+
+export function loadAvailableReplays() {
+  checking ||= fetch('/api/replays')
+    .then((res) => (res.ok ? res.json() : { dates: [] }))
+    .then((body) => { availableReplays.value = (body.dates || []).map((d) => d.date) })
+    .catch(() => { availableReplays.value = [] })
+  return checking
+}
+
 // No default parameter on purpose: replayInfo(undefined) must mean "none",
 // not "the current one" (a default param silently did that and broke exit).
 export function replayInfo(date) {

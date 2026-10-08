@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import CitySearch from '../components/CitySearch.vue'
 import Icon3D from '../components/Icon3D.vue'
 import { aqiCategory, categoryStyle } from '../lib/aqi'
+import { availableReplays, loadAvailableReplays } from '../lib/replay'
 import { tilt as vTilt } from '../lib/tilt'
 
 // Three.js is large; load it only for the landing page hero.
@@ -22,6 +23,7 @@ function openCity(place) {
 
 // ---------- live snapshot (ticker + counters) ----------
 const snapshot = ref(null)
+onMounted(() => { loadAvailableReplays() })
 onMounted(async () => {
   try {
     const res = await fetch('/api/snapshot')
@@ -321,7 +323,7 @@ const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['pa', 'ਪੰਜ�
         CPCB (AQI bands), CAQM (GRAP). Map © OpenStreetMap contributors.
         3D icons: Microsoft Fluent Emoji (MIT).
       </p>
-      <p>
+      <p v-if="availableReplays?.includes('2026-10-08')">
         <RouterLink :to="{ name: 'dashboard', query: { replay: '2026-10-08' } }">▶ Demo replay — real data captured 8 Oct 2026</RouterLink>
       </p>
     </footer>

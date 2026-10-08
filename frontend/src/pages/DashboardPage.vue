@@ -20,7 +20,7 @@ import { formatHour, grapStage, inDelhiNcr, relativeHour } from '../lib/aqi'
 import { daySummary } from '../lib/school'
 import { trailHeadline } from '../lib/smokeTrail'
 import { SECTIONS } from '../router'
-import { currentReplay, isReplayCity, replayDate, replayInfo } from '../lib/replay'
+import { availableReplays, currentReplay, isReplayCity, loadAvailableReplays, replayDate, replayInfo } from '../lib/replay'
 
 const route = useRoute()
 const router = useRouter()
@@ -47,8 +47,12 @@ const query = computed(() => ({
 }))
 
 // Demo replay (?replay=2026-10-08): only known snapshot dates, only their cities.
+const replayMissing = ref(false) // asked for a replay this server doesn't have
+
 function applyReplay(q) {
-  const date = replayInfo(q.replay) ? q.replay : ''
+  let date = replayInfo(q.replay) ? q.replay : ''
+  replayMissing.value = !!date && !availableReplays.value?.includes(date)
+  if (replayMissing.value) date = ''
   replayDate.value = date
   if (date && !isReplayCity(place.value, date)) place.value = { ...replayInfo(date).cities[0] }
 }
@@ -60,7 +64,8 @@ function selectPlace(next) {
   router.replace({ params: route.params, query: { ...route.query, ...query.value } })
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (route.query.replay) await loadAvailableReplays()
   applyReplay(route.query)
   const fromUrl = placeFromQuery(route.query)
   if (fromUrl && (!replayDate.value || isReplayCity(fromUrl, replayDate.value))) city.selectPlace(fromUrl)
@@ -163,6 +168,10 @@ const linkTo = (id) => ({ name: 'dashboard', params: { section: id === 'overview
         </div>
         <CitySearch v-if="!replayDate" @select="selectPlace" />
       </header>
+
+      <p v-if="replayMissing" class="card replay-missing" role="status">
+        Demo replay data isn't available on this server, so you're seeing live data.
+      </p>
 
       <ReplayBanner
         v-if="replayDate"
@@ -431,6 +440,8 @@ nav { display: grid; gap: 6px; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.replay-missing { margin: 0; padding: 12px 16px; border-color: #E8C48A; background: #FFF7E0; }
 
 .replay-pill {
   display: inline-block;

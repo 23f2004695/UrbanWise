@@ -13,6 +13,13 @@ from services.context import city_context
 DATE = "2026-10-08"
 DELHI = "lat=28.6139&lon=77.209"
 
+# The snapshot isn't in git (it's served from S3 when deployed); these tests
+# run only where the data has been restored into data/replay/.
+pytestmark = pytest.mark.skipif(
+    not (replay.ROOT / DATE / "manifest.json").is_file(),
+    reason="demo replay snapshot not present (not stored in git)",
+)
+
 
 @pytest.fixture
 def client():
@@ -78,3 +85,4 @@ def test_replay_circular_uses_snapshot_dates(client, monkeypatch):
                         {"en": "x", "hi": "y", "pa": "z", "model": "m", "fallback": False})
     res = client.post("/api/circular", json={"lat": 28.6139, "lon": 77.209, "replay": DATE})
     assert res.status_code == 200 and seen["date"] == "2026-10-09"   # "tomorrow" of the snapshot
+
