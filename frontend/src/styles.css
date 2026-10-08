@@ -178,3 +178,19 @@ body::after {
 }
 
 .btn-ghost { background: var(--surface); color: var(--brand); border: 1px solid var(--border); }
+
+/* Small "estimate" tag: keeps the honesty visible without a sentence. */
+.tag-estimate {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: help;
+}
