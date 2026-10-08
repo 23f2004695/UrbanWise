@@ -33,6 +33,7 @@ let lastTs = 0
 let visible = true
 let io = null
 
+const LEFT_LABELS = new Set(['Ludhiana', 'Kanpur'])
 const FRAME_MS = 650        // one hour of time-lapse per 0.65 s
 const WIND_PARTICLES = 700
 const WIND_BOOST = 7        // wind streaks are sped up so direction is visible
@@ -225,9 +226,12 @@ function drawCities(force = true) {
     const aqi = c.aqi[k]
     const style = categoryStyle(aqi != null ? aqiCategory(aqi) : null)
     L.circleMarker([c.lat, c.lon], {
-      radius: 8, color: '#FFFFFF', weight: 2.5, fillColor: style.bg, fillOpacity: 1,
+      // markerPane (600) keeps city dots above the smoke particles (450)
+      radius: 8, color: '#FFFFFF', weight: 2.5, fillColor: style.bg, fillOpacity: 1, pane: 'markerPane',
     }).bindTooltip(`${escapeHtml(c.name)} <strong>${escapeHtml(aqi ?? '—')}</strong>`, {
-      permanent: true, direction: 'right', className: 'radar-city',
+      // Ludhiana and Kanpur sit just west of Chandigarh and Lucknow; their labels
+      // go on the left so neighbouring labels don't overlap.
+      permanent: true, direction: LEFT_LABELS.has(c.name) ? 'left' : 'right', className: 'radar-city',
     }).addTo(cityLayer)
   }
 }
@@ -288,10 +292,31 @@ onMounted(() => {
     maxZoom: 10,
   }).addTo(map)
   cityLayer = L.layerGroup().addTo(map)
+
+  // The particle canvas lives in its own Leaflet pane between the map (400)
+  // and the city labels (tooltips, 650), so smoke never hides the labels.
+  // It's kept aligned with the container's top-left so we can keep drawing in
+  // container pixels while the map pans.
+  const pane = map.createPane('particles')
+  pane.style.zIndex = '450'
+  pane.style.pointerEvents = 'none'
+  const el = document.createElement('canvas')
+  el.className = 'particles'
+  el.setAttribute('aria-hidden', 'true')
+  pane.appendChild(el)
+  canvas.value = el
+  const alignCanvas = () => L.DomUtil.setPosition(el, map.containerPointToLayerPoint([0, 0]))
+
   map.on('movestart zoomstart', clearCanvas)
-  map.on('moveend zoomend', () => { if (!playing.value) drawStill() })
-  map.on('resize', sizeCanvas)
+  map.on('move', alignCanvas)
+  map.on('moveend zoomend', () => {
+    alignCanvas()
+    clearCanvas()
+    if (!playing.value) drawStill()
+  })
+  map.on('resize', () => { sizeCanvas(); alignCanvas() })
   sizeCanvas()
+  alignCanvas()
   io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting })
   io.observe(mapEl.value)
   raf = requestAnimationFrame(loop)
@@ -321,7 +346,6 @@ onBeforeUnmount(() => {
 
     <div class="stage">
       <div ref="mapEl" class="map"></div>
-      <canvas ref="canvas" class="particles" aria-hidden="true"></canvas>
       <div v-if="frames.length" class="hud" aria-live="off">
         <span class="hud-clock">{{ clock }}</span>
         <span class="hud-phase" :class="{ forecast: frameIndex > nowIndex, now: frameIndex === nowIndex }">{{ phase }}</span>
@@ -362,16 +386,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* isolation keeps Leaflet's z-indexes inside this box (below sticky headers),
-   while letting the canvas sit between the map tiles (400) and Leaflet's
-   tooltips (650) and zoom controls (800+). */
+/* isolation keeps Leaflet's z-indexes inside this box (below sticky headers).
+   The particle canvas is inside Leaflet itself (a custom pane, see onMounted). */
 .stage { position: relative; margin-top: 14px; isolation: isolate; }
 
 .map { height: 480px; border-radius: 12px; border: 1px solid var(--border); }
 
 .map :deep(.leaflet-tile-pane) { filter: grayscale(1) contrast(0.85) brightness(1.08); }
 
-.particles { position: absolute; inset: 0; z-index: 450; pointer-events: none; border-radius: 12px; }
+.map :deep(.particles) { position: absolute; left: 0; top: 0; pointer-events: none; }
 
 .hud {
   position: absolute;
