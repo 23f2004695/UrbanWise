@@ -192,3 +192,81 @@ def test_origin_secret_blocks_direct_calls(client, monkeypatch):
 def test_no_origin_secret_locally(client):
     assert app_module.ORIGIN_SECRET == ""
     assert client.get("/api/health").status_code == 200
+
+
+# --- serving the built site (deploys without CloudFront) ---
+
+@pytest.fixture
+def site(tmp_path, monkeypatch):
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<!doctype html><title>UrbanWise</title>")
+    (tmp_path / "assets" / "app-abc123.js").write_text("console.log(1)")
+    (tmp_path / "favicon.svg").write_text("<svg/>")
+    monkeypatch.setattr(app_module, "SITE_DIR", str(tmp_path))
+    return app_module.app.test_client()
+
+
+def test_site_serves_index_for_app_routes(site):
+    for path in ["/", "/dashboard", "/dashboard/smoke?view=radar"]:
+        res = site.get(path)
+        assert res.status_code == 200 and b"UrbanWise" in res.data
+        assert res.headers["Cache-Control"] == "no-cache"
+
+
+def test_site_serves_files_with_cache_headers(site):
+    res = site.get("/assets/app-abc123.js")
+    assert res.status_code == 200 and "immutable" in res.headers["Cache-Control"]
+    assert "max-age=3600" in site.get("/favicon.svg").headers["Cache-Control"]
+    assert site.get("/favicon.svg").headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_unknown_api_paths_stay_json_404(site):
+    res = site.get("/api/nope")
+    assert res.status_code == 404 and res.get_json()["error"] == "Not found"
+    assert site.get("/api/health").get_json() == {"status": "ok"}
+
+
+def test_no_site_dir_locally(client):
+    assert app_module.SITE_DIR == ""
+    assert client.get("/dashboard").status_code == 404
+
+
+def test_path_traversal_is_refused(site):
+    assert site.get("/../app.py").status_code in (400, 404) or b"import" not in site.get("/../app.py").data
+    assert b"import" not in site.get("/%2e%2e/app.py").data
+
+
+def test_lambda_url_uses_the_request_context_address(monkeypatch):
+    import json
+    monkeypatch.setattr(app_module, "CLIENT_IP_FROM", "lambda")
+    ctx = json.dumps({"http": {"sourceIp": "203.0.113.7"}})
+    headers = {"X-Amzn-Request-Context": ctx, "X-Forwarded-For": "6.6.6.6"}
+    with app_module.app.test_request_context(headers=headers):
+        assert app_module._client_id() == "203.0.113.7"
+    with app_module.app.test_request_context(headers={"X-Amzn-Request-Context": "junk"},
+                                             environ_base={"REMOTE_ADDR": "127.0.0.1"}):
+        assert app_module._client_id() == "127.0.0.1"
+
+
+def test_air_retries_once_after_a_timeout(monkeypatch):
+    calls = []
+
+    class Ok:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return make_raw()
+
+    def flaky_get(*a, **k):
+        calls.append(1)
+        if len(calls) == 1:
+            raise air.requests.Timeout("slow")
+        return Ok()
+
+    air._air_cache.clear()
+    monkeypatch.setattr(air.requests, "get", flaky_get)
+    assert air.get_air(28.6, 77.2)["current"]["aqi"]
+    assert len(calls) == 2

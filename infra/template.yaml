@@ -2,7 +2,9 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   UrbanWise - bad-air-day assistant. CloudFront serves the Vue site from S3 and
   sends /api/* to a Flask API on Lambda. An hourly pipeline Lambda (EventBridge
-  Scheduler) keeps wind grids, results and history in S3.
+  Scheduler) keeps wind grids, results and history in S3. With UseCloudFront=false
+  (new accounts must be verified before using CloudFront) the API Lambda serves
+  the site itself on its function URL.
 
 Parameters:
   CodeBucket:
@@ -32,15 +34,22 @@ Parameters:
     Type: String
     Default: ""
     Description: Optional email for alarm notifications
+  UseCloudFront:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: false = the API Lambda also serves the site on its function URL
 
 Conditions:
   HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+  WithCloudFront: !Equals [!Ref UseCloudFront, "true"]
 
 Resources:
   # ---------- storage ----------
 
   SiteBucket:
     Type: AWS::S3::Bucket
+    Condition: WithCloudFront
     Properties:
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -65,6 +74,7 @@ Resources:
 
   SiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: WithCloudFront
     Properties:
       Bucket: !Ref SiteBucket
       PolicyDocument:
@@ -96,6 +106,12 @@ Resources:
               - Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub "${ResultsBucket.Arn}/latest/*"
+              # Lets S3 say "not found" (instead of "access denied") for a grid that isn't stored yet.
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt ResultsBucket.Arn
+                Condition:
+                  StringLike: { "s3:prefix": "latest/*" }
               - Effect: Allow
                 Action: s3:PutObject
                 Resource: !Sub "${ResultsBucket.Arn}/latest/wind/*"
@@ -125,9 +141,13 @@ Resources:
           PORT: "8080"
           AWS_LWA_READINESS_CHECK_PATH: /api/health
           RESULTS_BUCKET: !Ref ResultsBucket
-          ORIGIN_SECRET: !Ref OriginSecret
+          # Without CloudFront nothing adds the secret header, so the check is off.
+          ORIGIN_SECRET: !If [WithCloudFront, !Ref OriginSecret, ""]
+          SITE_DIR: !If [WithCloudFront, "", site]
           GEMINI_KEY_PARAM: !Ref GeminiKeyParam
           TRUSTED_PROXIES: !Ref TrustedProxies
+          # Without CloudFront, take the visitor's address from the Lambda request context.
+          CLIENT_IP_FROM: !If [WithCloudFront, "", lambda]
 
   ApiLogGroup:
     Type: AWS::Logs::LogGroup
@@ -232,6 +252,7 @@ Resources:
 
   SiteOriginAccess:
     Type: AWS::CloudFront::OriginAccessControl
+    Condition: WithCloudFront
     Properties:
       OriginAccessControlConfig:
         Name: !Sub "${AWS::StackName}-site"
@@ -242,6 +263,7 @@ Resources:
   # Page links like /dashboard/smoke are app routes, not files: serve index.html.
   SpaRewrite:
     Type: AWS::CloudFront::Function
+    Condition: WithCloudFront
     Properties:
       Name: !Sub "${AWS::StackName}-spa-rewrite"
       AutoPublish: true
@@ -259,6 +281,7 @@ Resources:
 
   Distribution:
     Type: AWS::CloudFront::Distribution
+    Condition: WithCloudFront
     Properties:
       DistributionConfig:
         Comment: UrbanWise
@@ -366,10 +389,12 @@ Resources:
 
 Outputs:
   SiteUrl:
-    Value: !Sub "https://${Distribution.DomainName}"
+    Value: !If [WithCloudFront, !Sub "https://${Distribution.DomainName}", !GetAtt ApiFunctionUrl.FunctionUrl]
   DistributionId:
+    Condition: WithCloudFront
     Value: !Ref Distribution
   SiteBucketName:
+    Condition: WithCloudFront
     Value: !Ref SiteBucket
   ResultsBucketName:
     Value: !Ref ResultsBucket
