@@ -1,9 +1,11 @@
+import hmac
+import json
 import os
 import re
 from datetime import date, timedelta
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException
 
 from services.advisory import DEFAULT_SLOTS, in_delhi_ncr, school_plan
@@ -40,9 +42,34 @@ TOTAL_LIMITS = {
 # (0 locally; set on deploy). Anything further left was sent by the visitor
 # and can be faked, so it's never used.
 TRUSTED_PROXIES = int(os.getenv("TRUSTED_PROXIES") or 0)
+# On a Lambda function URL (no CloudFront), X-Forwarded-For arrives exactly as
+# the visitor sent it. The real address is in the request context the Lambda
+# Web Adapter adds (and overwrites if a visitor sends their own), so
+# CLIENT_IP_FROM=lambda reads it from there.
+CLIENT_IP_FROM = os.getenv("CLIENT_IP_FROM") or ""
+
+
+# On AWS, CloudFront adds this secret header; requests without it didn't come
+# through CloudFront (e.g. someone calling the Lambda URL directly) and are refused.
+ORIGIN_SECRET = os.getenv("ORIGIN_SECRET") or ""
+
+
+@app.before_request
+def _only_via_cloudfront():
+    if ORIGIN_SECRET and not hmac.compare_digest(
+            request.headers.get("X-Origin-Verify", ""), ORIGIN_SECRET):
+        return jsonify(error="Forbidden"), 403
+    return None
 
 
 def _client_id():
+    if CLIENT_IP_FROM == "lambda":
+        try:
+            ip = json.loads(request.headers.get("X-Amzn-Request-Context", ""))["http"]["sourceIp"]
+            if ip:
+                return ip
+        except (ValueError, KeyError, TypeError):
+            pass
     if TRUSTED_PROXIES:
         hops = [h.strip() for h in request.headers.get("X-Forwarded-For", "").split(",") if h.strip()]
         if len(hops) >= TRUSTED_PROXIES:
@@ -238,6 +265,41 @@ def geocode():
     if len(query) < 2:
         raise BadRequest("q must be at least 2 characters")
     return jsonify(results=search_places(query))
+
+
+# ---------- website (only when deployed without CloudFront) ----------
+# SITE_DIR points at the built frontend. With CloudFront the site is served
+# from S3 instead and this stays unset.
+SITE_DIR = os.getenv("SITE_DIR") or ""
+if SITE_DIR and not os.path.isabs(SITE_DIR):
+    SITE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), SITE_DIR)
+
+
+@app.get("/")
+@app.get("/<path:path>")
+def site(path=""):
+    if path.startswith("api/") or not SITE_DIR:
+        return jsonify(error="Not found"), 404
+    if path and os.path.isfile(os.path.join(SITE_DIR, path)):
+        res = send_from_directory(SITE_DIR, path)
+        # Vite puts a content hash in asset names, so they never change.
+        res.headers["Cache-Control"] = ("public, max-age=31536000, immutable"
+                                        if path.startswith("assets/") else "public, max-age=3600")
+        return res
+    # Anything else is an app route like /dashboard/smoke.
+    res = send_from_directory(SITE_DIR, "index.html")
+    res.headers["Cache-Control"] = "no-cache"
+    return res
+
+
+@app.after_request
+def security_headers(res):
+    res.headers.setdefault("X-Content-Type-Options", "nosniff")
+    res.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    res.headers.setdefault("X-Frame-Options", "DENY")
+    if request.is_secure or request.headers.get("X-Forwarded-Proto") == "https":
+        res.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    return res
 
 
 if __name__ == "__main__":

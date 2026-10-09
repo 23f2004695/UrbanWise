@@ -171,6 +171,11 @@ onBeforeUnmount(() => map?.remove())
   font-weight: 700;
   white-space: nowrap;
   box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+  /* Below the arrival point: smoke arrives next to the city, and the city's
+     name label (to the right, drawn on top) used to hide this one. Margins,
+     not transform, because Leaflet positions markers with transform. */
+  margin-top: 24px;
+  margin-left: -36px;
 }
 
 .map :deep(.trail-label) { padding: 1px 6px; font-size: 12px; font-weight: 600; }

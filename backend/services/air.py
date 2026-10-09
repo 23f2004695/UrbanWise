@@ -43,12 +43,19 @@ def _fetch_air(lat, lon):
         "past_days": 1,
         "forecast_days": 3,
     }
-    try:
-        res = requests.get(AIR_URL, params=params, timeout=10)
-        res.raise_for_status()
-        return res.json()
-    except requests.RequestException as exc:
-        raise UpstreamError(f"Open-Meteo air quality request failed: {exc}") from exc
+    # One retry on a timeout or 5xx: from AWS we've seen the odd slow response.
+    for attempt in range(2):
+        try:
+            res = requests.get(AIR_URL, params=params, timeout=10)
+            if getattr(res, "status_code", 200) >= 500 and attempt == 0:
+                continue
+            res.raise_for_status()
+            return res.json()
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt == 1:
+                raise UpstreamError(f"Open-Meteo air quality request failed: {exc}") from exc
+        except requests.RequestException as exc:
+            raise UpstreamError(f"Open-Meteo air quality request failed: {exc}") from exc
 
 
 def _mean(values):

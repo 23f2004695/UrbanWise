@@ -85,7 +85,17 @@ UrbanWise gives estimates for planning, not medical advice. The full method, ass
 - **Frontend**: Vue 3, Vite, Leaflet, Chart.js, Three.js
 - **Backend**: Flask (Python), with Gemini for notices, the assistant and Punjabi speech
 - **Data**: Open-Meteo (air quality, winds, geocoding), NASA FIRMS
-- **AWS (planned for deployment)**: S3 + CloudFront for the site, Lambda for the API, and a scheduled pipeline (EventBridge + Lambda) that keeps smoke results and a history in S3
+- **AWS**: everything is in [infra/template.yaml](infra/template.yaml) and deployed with `infra/deploy.sh`
+
+```
+Browser ─► CloudFront ─┬─► S3 (built website)
+                       └─► /api/* ─► Lambda: Flask API (Lambda Web Adapter)
+                                        │ reads wind grids from S3 first
+EventBridge Scheduler (hourly) ─► Lambda: pipeline ─► S3: latest/ + history/
+CloudWatch logs + alarms · Gemini key in SSM Parameter Store
+```
+
+The hourly pipeline fetches each main city's wind grids from both weather models, so visitors don't each hit Open-Meteo, and keeps a history of every smoke alert so forecasts can be checked afterwards.
 
 ---
 
@@ -129,6 +139,8 @@ backend/
   data/districts.json district names for labelling fires
   scripts/            district list builder and the HYSPLIT comparison
   tests/
+  pipeline.py         hourly AWS job: wind grids, results and history in S3
+infra/                CloudFormation template and deploy script
 frontend/
   src/pages/          landing page and dashboard
   src/components/     cards, maps, radar, 3D scene

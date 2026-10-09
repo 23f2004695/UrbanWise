@@ -76,6 +76,7 @@ def test_air_endpoint_keeps_working_through_an_outage(monkeypatch):
         def json(self):
             return make_raw()
 
+    air._air_cache.clear()  # a cached copy from another test would skip the fetch
     monkeypatch.setattr(air.requests, "get", lambda *a, **k: Ok())
     client = app_module.app.test_client()
     first = client.get("/api/air?lat=28.6&lon=77.2").get_json()

@@ -18,6 +18,7 @@ from pathlib import Path
 import requests
 from cachetools import TTLCache, cached
 
+from services import store
 from services.air import UpstreamError
 from services.lastgood import keep_last_good, stale_info
 
@@ -120,10 +121,18 @@ def _get_json_with_retry(url, params, label, attempts=2):
 SECOND_MODEL = "gfs_seamless"
 
 
-@cached(_wind_cache, condition=threading.Condition())
-@keep_last_good("Open-Meteo wind", (UpstreamError,), maxsize=200)
-def _fetch_wind_grid(center_lat, center_lon, model=None):
-    """model=None is Open-Meteo's default "best match" for the location."""
+# Wind grids saved in S3 by the pipeline are reused for this long. Weather
+# models only update every few hours, and the grid covers 3 past days, so an
+# older copy still has the full 48 h behind and ahead of "now".
+STORED_WIND_MAX_AGE_S = 4 * 3600
+
+
+def wind_store_key(center_lat, center_lon, model=None):
+    return f"latest/wind/{center_lat:g}_{center_lon:g}_{model or 'best'}.json"
+
+
+def download_wind(center_lat, center_lon, model=None):
+    """Raw Open-Meteo response for the grid around a (whole-degree) centre."""
     lats, lons = _grid_axis(center_lat), _grid_axis(center_lon)
     points = [(la, lo) for la in lats for lo in lons]
     params = {
@@ -132,15 +141,47 @@ def _fetch_wind_grid(center_lat, center_lon, model=None):
         "hourly": "wind_speed_925hPa,wind_direction_925hPa",
         "wind_speed_unit": "kmh",
         "timezone": "UTC",
-        "past_days": 2,
-        "forecast_days": 3,  # future hours for the Incoming Smoke Alert
+        "past_days": 3,
+        "forecast_days": 4,  # future hours for the Incoming Smoke Alert
     }
     if model:
         params["models"] = model
     body = _get_json_with_retry(WIND_URL, params, "Open-Meteo wind")
     if not isinstance(body, list) or len(body) != len(points):
         raise UpstreamError("Unexpected wind grid response")
+    return body
 
+
+def _stored_wind(center_lat, center_lon, model):
+    saved = store.get_json(wind_store_key(center_lat, center_lon, model))
+    try:
+        fetched = datetime.fromisoformat(saved["fetched_at"])
+        if (datetime.now(timezone.utc) - fetched).total_seconds() < STORED_WIND_MAX_AGE_S:
+            return saved["body"]
+    except (TypeError, KeyError, ValueError):
+        pass
+    return None
+
+
+def save_wind(center_lat, center_lon, model, body):
+    store.put_json(wind_store_key(center_lat, center_lon, model),
+                   {"fetched_at": datetime.now(timezone.utc).isoformat(), "body": body})
+
+
+@cached(_wind_cache, condition=threading.Condition())
+@keep_last_good("Open-Meteo wind", (UpstreamError,), maxsize=200)
+def _fetch_wind_grid(center_lat, center_lon, model=None):
+    """model=None is Open-Meteo's default "best match" for the location.
+
+    Uses the copy in S3 when deployed and fresh enough, otherwise Open-Meteo.
+    """
+    body = _stored_wind(center_lat, center_lon, model)
+    if body is None:
+        body = download_wind(center_lat, center_lon, model)
+        if store.bucket():
+            save_wind(center_lat, center_lon, model, body)  # share with other instances
+
+    lats, lons = _grid_axis(center_lat), _grid_axis(center_lon)
     try:
         samples = {}
         for n, loc in enumerate(body):
@@ -374,8 +415,12 @@ def smoke_forecast(lat, lon, grid, fires, now, districts=None):
                 if (now - f["time"]).total_seconds() <= CLUSTER_MAX_AGE_H * 3600
                 and haversine_km(lat, lon, f["lat"], f["lon"]) <= LOCAL_KM)
     results = []
-    for c in fire_clusters(fires, now):
-        if haversine_km(lat, lon, c["lat"], c["lon"]) <= LOCAL_KM or not grid.contains(c["lat"], c["lon"]):
+    # Rank only fires inside this city's wind grid: the FIRMS file covers all of
+    # South Asia, and big fires in e.g. Odisha or Myanmar used to take most of the
+    # top places and push out the Punjab fires that can actually reach the city.
+    nearby = [f for f in fires if grid.contains(f["lat"], f["lon"])]
+    for c in fire_clusters(nearby, now):
+        if haversine_km(lat, lon, c["lat"], c["lon"]) <= LOCAL_KM:
             continue
         path = forward_trajectory(c["lat"], c["lon"], grid, now)
         if len(path) < 2:

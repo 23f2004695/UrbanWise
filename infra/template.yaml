@@ -1,0 +1,404 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  UrbanWise - bad-air-day assistant. CloudFront serves the Vue site from S3 and
+  sends /api/* to a Flask API on Lambda. An hourly pipeline Lambda (EventBridge
+  Scheduler) keeps wind grids, results and history in S3. With UseCloudFront=false
+  (new accounts must be verified before using CloudFront) the API Lambda serves
+  the site itself on its function URL.
+
+Parameters:
+  CodeBucket:
+    Type: String
+    Description: Bucket holding the backend zip (created by deploy.sh)
+  CodeKey:
+    Type: String
+    Description: Key of the backend zip
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: Header value CloudFront sends so the API only answers CloudFront
+  GeminiKeyParam:
+    Type: String
+    Default: /urbanwise/gemini-api-key
+    Description: SSM SecureString parameter holding the Gemini API key
+  TrustedProxies:
+    Type: String
+    Default: "0"
+    Description: Proxies that add themselves to X-Forwarded-For (see backend/.env.example)
+  WebAdapterLayerArn:
+    Type: String
+    Default: arn:aws:lambda:ap-south-1:753240598075:layer:LambdaAdapterLayerArm64:25
+    Description: AWS Lambda Web Adapter layer (arm64) for this region
+  AlarmEmail:
+    Type: String
+    Default: ""
+    Description: Optional email for alarm notifications
+  UseCloudFront:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: false = the API Lambda also serves the site on its function URL
+
+Conditions:
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+  WithCloudFront: !Equals [!Ref UseCloudFront, "true"]
+
+Resources:
+  # ---------- storage ----------
+
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Condition: WithCloudFront
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-history
+            Status: Enabled
+            Prefix: history/
+            ExpirationInDays: 365
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: WithCloudFront
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  # ---------- API (Flask on Lambda via the Lambda Web Adapter) ----------
+
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: api
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "${ResultsBucket.Arn}/latest/*"
+              # Lets S3 say "not found" (instead of "access denied") for a grid that isn't stored yet.
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt ResultsBucket.Arn
+                Condition:
+                  StringLike: { "s3:prefix": "latest/*" }
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub "${ResultsBucket.Arn}/latest/wind/*"
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${GeminiKeyParam}"
+
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: UrbanWise API (Flask)
+      Runtime: python3.12
+      Architectures: [arm64]
+      Handler: run.sh
+      MemorySize: 1024
+      Timeout: 60
+      Role: !GetAtt ApiRole.Arn
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref CodeKey
+      Layers:
+        - !Ref WebAdapterLayerArn
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_PORT: "8080"
+          PORT: "8080"
+          AWS_LWA_READINESS_CHECK_PATH: /api/health
+          RESULTS_BUCKET: !Ref ResultsBucket
+          # Without CloudFront nothing adds the secret header, so the check is off.
+          ORIGIN_SECRET: !If [WithCloudFront, !Ref OriginSecret, ""]
+          SITE_DIR: !If [WithCloudFront, "", site]
+          GEMINI_KEY_PARAM: !Ref GeminiKeyParam
+          TRUSTED_PROXIES: !Ref TrustedProxies
+          # Without CloudFront, take the visitor's address from the Lambda request context.
+          CLIENT_IP_FROM: !If [WithCloudFront, "", lambda]
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ApiFunction}"
+      RetentionInDays: 14
+
+  ApiFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref ApiFunction
+      # Public URL, but the app refuses requests without CloudFront's secret header.
+      AuthType: NONE
+
+  ApiUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  # ---------- scheduled pipeline ----------
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: pipeline
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject]
+                Resource: !Sub "${ResultsBucket.Arn}/*"
+
+  PipelineFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: UrbanWise hourly pipeline (wind grids, results, history)
+      Runtime: python3.12
+      Architectures: [arm64]
+      Handler: pipeline.handler
+      MemorySize: 1024
+      Timeout: 600
+      Role: !GetAtt PipelineRole.Arn
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref CodeKey
+      Environment:
+        Variables:
+          RESULTS_BUCKET: !Ref ResultsBucket
+
+  PipelineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${PipelineFunction}"
+      RetentionInDays: 14
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: invoke-pipeline
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt PipelineFunction.Arn
+
+  PipelineSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Run the UrbanWise pipeline every hour
+      ScheduleExpression: rate(1 hour)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      Target:
+        Arn: !GetAtt PipelineFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  # ---------- CloudFront ----------
+
+  SiteOriginAccess:
+    Type: AWS::CloudFront::OriginAccessControl
+    Condition: WithCloudFront
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-site"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # Page links like /dashboard/smoke are app routes, not files: serve index.html.
+  SpaRewrite:
+    Type: AWS::CloudFront::Function
+    Condition: WithCloudFront
+    Properties:
+      Name: !Sub "${AWS::StackName}-spa-rewrite"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Serve index.html for app routes
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          if (request.uri.indexOf('.') === -1) {
+            request.uri = '/index.html';
+          }
+          return request;
+        }
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: WithCloudFront
+    Properties:
+      DistributionConfig:
+        Comment: UrbanWise
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_200  # includes India
+        Origins:
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !Ref SiteOriginAccess
+            S3OriginConfig: { OriginAccessIdentity: "" }
+          - Id: api
+            DomainName: !Select [2, !Split ["/", !GetAtt ApiFunctionUrl.FunctionUrl]]
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: !Ref OriginSecret
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+              OriginReadTimeout: 60
+        DefaultCacheBehavior:
+          TargetOriginId: site
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6          # Managed-CachingOptimized
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # Managed-SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt SpaRewrite.FunctionMetadata.FunctionARN
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad          # Managed-CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac  # Managed-AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+
+  # ---------- monitoring ----------
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasAlarmEmail
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlarmEmail
+
+  PipelineErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: The hourly pipeline failed
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Ref PipelineFunction }]
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmEmail, [!Ref AlarmTopic], !Ref "AWS::NoValue"]
+
+  PipelineStoppedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: The hourly pipeline hasn't run for 2 hours
+      Namespace: AWS/Lambda
+      MetricName: Invocations
+      Dimensions: [{ Name: FunctionName, Value: !Ref PipelineFunction }]
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: !If [HasAlarmEmail, [!Ref AlarmTopic], !Ref "AWS::NoValue"]
+
+  ApiUnhandledErrorsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApiLogGroup
+      FilterPattern: '"Unhandled error"'
+      MetricTransformations:
+        - MetricNamespace: UrbanWise
+          MetricName: ApiUnhandledErrors
+          MetricValue: "1"
+          DefaultValue: 0
+
+  ApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: The API hit 5 or more unexpected errors in 5 minutes
+      Namespace: UrbanWise
+      MetricName: ApiUnhandledErrors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmEmail, [!Ref AlarmTopic], !Ref "AWS::NoValue"]
+
+Outputs:
+  SiteUrl:
+    Value: !If [WithCloudFront, !Sub "https://${Distribution.DomainName}", !GetAtt ApiFunctionUrl.FunctionUrl]
+  DistributionId:
+    Condition: WithCloudFront
+    Value: !Ref Distribution
+  SiteBucketName:
+    Condition: WithCloudFront
+    Value: !Ref SiteBucket
+  ResultsBucketName:
+    Value: !Ref ResultsBucket
+  ApiFunctionName:
+    Value: !Ref ApiFunction
+  PipelineFunctionName:
+    Value: !Ref PipelineFunction
