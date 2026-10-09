@@ -415,8 +415,12 @@ def smoke_forecast(lat, lon, grid, fires, now, districts=None):
                 if (now - f["time"]).total_seconds() <= CLUSTER_MAX_AGE_H * 3600
                 and haversine_km(lat, lon, f["lat"], f["lon"]) <= LOCAL_KM)
     results = []
-    for c in fire_clusters(fires, now):
-        if haversine_km(lat, lon, c["lat"], c["lon"]) <= LOCAL_KM or not grid.contains(c["lat"], c["lon"]):
+    # Rank only fires inside this city's wind grid: the FIRMS file covers all of
+    # South Asia, and big fires in e.g. Odisha or Myanmar used to take most of the
+    # top places and push out the Punjab fires that can actually reach the city.
+    nearby = [f for f in fires if grid.contains(f["lat"], f["lon"])]
+    for c in fire_clusters(nearby, now):
+        if haversine_km(lat, lon, c["lat"], c["lon"]) <= LOCAL_KM:
             continue
         path = forward_trajectory(c["lat"], c["lon"], grid, now)
         if len(path) < 2:

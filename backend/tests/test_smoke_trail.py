@@ -283,3 +283,13 @@ def test_forecast_still_works_if_second_model_fails(monkeypatch):
     })
     assert body["alert"]["incoming"] is True
     assert body["alert"]["models"] == {"checked": 1, "agree": None, "second": None, "arrival_range_h": None}
+
+
+def test_far_away_fires_do_not_crowd_out_nearby_ones():
+    # Regression (9 Oct): eight strong clusters outside the grid (e.g. Odisha,
+    # Myanmar) took every top place, so the Punjab fire was never checked.
+    far = [fire(20.0 + k, 95.0 + k, 3, frp=500) for k in range(8)]
+    grid = constant_grid(14, 324, future=48)
+    result = st.smoke_forecast(*DELHI, grid, far + [fire(30.25, 75.84, 4, 8)], NOW, districts=[SANGRUR])
+    assert result["alert"]["incoming"] is True
+    assert result["alert"]["districts"] == ["Sangrur"]
