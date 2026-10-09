@@ -3,6 +3,8 @@
 > **A bad-air-day assistant for Indian cities**, built for **Environmental Hacks Track 1 (Air)**.
 > Most AQI apps only tell you *what* the air is like. **UrbanWise** also shows *where the smoke is coming from*, *whether more is on the way*, and *what to do about it*.
 
+**Try it live:** https://23ggiipmh7h5sh6y4cprovs2pq0mslwe.lambda-url.ap-south-1.on.aws/ (running on AWS Lambda in Mumbai)
+
 ![UrbanWise landing page](docs/screenshots/landing.jpg)
 
 ---
@@ -31,9 +33,10 @@ Every winter, Delhi-NCR and other North Indian cities spend weeks with **"Very P
 ### ⭐ Headline Features
 
 * 🔥 **Smoke Trail**: traces your city's air back 48 hours on the wind and matches the path against NASA satellite fire detections, e.g. *"The air over New Delhi likely passed 8 satellite-detected fires near Palwal and Faridabad."*
-* 🚨 **Incoming Smoke Alert**: runs today's fire clusters *forward* on forecast winds to estimate when smoke may reach your city, e.g. *"Smoke from 45 satellite-detected fires near Phalodi may reach New Delhi around Sat 1 am."*
+* 🚨 **Incoming Smoke Alert**: runs today's fire clusters *forward* on forecast winds to estimate when smoke may reach your city, e.g. *"Smoke from 45 satellite-detected fires near Phalodi may reach New Delhi around Sat 1 am."* Every alert is re-run on a second weather model (GFS) and says whether the two agree.
 * 🛰️ **Smoke Radar**: a 48-hour time-lapse of wind, fires and drifting smoke over North India.
 * 📝 **Parent notices**: School Mode drafts a notice to parents in **English, Hindi and Punjabi**. The principal reviews it and shares it on WhatsApp.
+* 🔬 **Checked, not just claimed**: we compared our trajectories with NOAA HYSPLIT and wrote up where they hold and where they don't ([docs/VALIDATION.md](docs/VALIDATION.md)).
 
 ### ⚙️ Core Features
 
@@ -49,11 +52,11 @@ Every winter, Delhi-NCR and other North Indian cities spend weeks with **"Very P
 
 ## 📸 Screenshots
 
-Taken on 8 Oct 2026 with live data.
+Taken on 9 Oct 2026 from the live AWS deployment.
 
 | Dashboard | Incoming Smoke Alert |
 | :---: | :---: |
-| ![Dashboard overview for New Delhi](docs/screenshots/dashboard.jpg) | ![Smoke from fires near Phalodi forecast to reach New Delhi](docs/screenshots/incoming-smoke.jpg) |
+| ![Dashboard overview for New Delhi](docs/screenshots/dashboard.jpg) | ![Smoke forecast to reach Jaipur, with the two weather models disagreeing](docs/screenshots/incoming-smoke.jpg) |
 | **Smoke Radar** | **School Mode** |
 | ![48-hour time-lapse of fires, wind and smoke](docs/screenshots/smoke-radar.jpg) | ![School Mode guidance for assembly, PE and dismissal](docs/screenshots/school-mode.jpg) |
 | **Smog Vision** | **On a phone** |
@@ -87,15 +90,13 @@ UrbanWise gives estimates for planning, not medical advice. The full method, ass
 - **Data**: Open-Meteo (air quality, winds, geocoding), NASA FIRMS
 - **AWS**: everything is in [infra/template.yaml](infra/template.yaml) and deployed with `infra/deploy.sh`
 
-```
-Browser ─► CloudFront ─┬─► S3 (built website)
-                       └─► /api/* ─► Lambda: Flask API (Lambda Web Adapter)
-                                        │ reads wind grids from S3 first
-EventBridge Scheduler (hourly) ─► Lambda: pipeline ─► S3: latest/ + history/
-CloudWatch logs + alarms · Gemini key in SSM Parameter Store
-```
+![UrbanWise architecture on AWS](docs/architecture.svg)
 
-The hourly pipeline fetches each main city's wind grids from both weather models, so visitors don't each hit Open-Meteo, and keeps a history of every smoke alert so forecasts can be checked afterwards.
+- **Lambda** runs the Flask API (through the Lambda Web Adapter) and, for now, serves the site on its function URL.
+- **EventBridge Scheduler** runs a second **Lambda** every hour. It fetches the wind grids for the main cities from both weather models, so visitors don't each hit Open-Meteo, and computes their air, Smoke Trail and smoke alert.
+- **S3** keeps those grids and results, plus an hourly **history** of every alert and the NASA fire detections, so forecasts can be checked against what happened.
+- **CloudWatch** has the logs and alarms; the Gemini key sits encrypted in **SSM Parameter Store**.
+- **CloudFront** in front of an S3-hosted site is in the template too. New AWS accounts have to be verified before they can use CloudFront, so until ours is, we deploy with `USE_CLOUDFRONT=false`.
 
 ---
 
@@ -127,6 +128,13 @@ Air quality, fires and winds need no keys. Only the parent notices, the assistan
 cd backend && venv/bin/python -m pytest
 cd frontend && npx vitest run
 ```
+
+**Deploy to AWS** (needs the AWS CLI, logged in)
+```bash
+infra/deploy.sh                         # with CloudFront
+USE_CLOUDFRONT=false infra/deploy.sh    # if your account isn't verified for CloudFront yet
+```
+It stores the Gemini key from `backend/.env` in SSM, builds the Lambda package and the site, and deploys the stack to ap-south-1.
 
 ---
 
