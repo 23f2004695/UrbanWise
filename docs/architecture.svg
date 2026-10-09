@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 620" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .aws { fill: #FFF4E5; stroke: #E8871E; stroke-width: 1.6; }
+      .ext { fill: #F1F5F9; stroke: #94A3B8; stroke-width: 1.4; }
+      .user { fill: #EEF2FF; stroke: #22357A; stroke-width: 1.6; }
+      .pending { fill: #FFFFFF; stroke: #94A3B8; stroke-width: 1.4; stroke-dasharray: 6 4; }
+      .t { font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .s { font-size: 12.5px; fill: #475569; }
+      .k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; fill: #B45309; }
+      .kx { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; fill: #64748B; }
+      .line { stroke: #475569; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #94A3B8; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: url(#arrow); }
+      .lbl { font-size: 11.5px; fill: #334155; }
+    </style>
+  </defs>
+
+  <rect width="1040" height="620" fill="#FFFFFF"/>
+  <text x="24" y="34" font-size="20" font-weight="800" fill="#0F172A">UrbanWise on AWS</text>
+  <text x="24" y="54" class="s">Region ap-south-1 (Mumbai) · everything defined in infra/template.yaml</text>
+
+  <!-- visitor -->
+  <rect x="24" y="200" width="150" height="86" rx="12" class="user"/>
+  <text x="99" y="236" text-anchor="middle" class="t">Visitor</text>
+  <text x="99" y="256" text-anchor="middle" class="s">browser or phone</text>
+
+  <!-- pending cloudfront -->
+  <rect x="236" y="84" width="230" height="78" rx="12" class="pending"/>
+  <text x="250" y="104" class="kx">IN TEMPLATE · PENDING</text>
+  <text x="250" y="126" class="t">CloudFront + S3 site</text>
+  <text x="250" y="146" class="s">waiting on account verification</text>
+
+  <!-- api lambda -->
+  <rect x="236" y="196" width="230" height="96" rx="12" class="aws"/>
+  <text x="250" y="216" class="k">AWS LAMBDA · FUNCTION URL</text>
+  <text x="250" y="238" class="t">API + website</text>
+  <text x="250" y="258" class="s">Flask via Lambda Web Adapter</text>
+  <text x="250" y="276" class="s">rate limits · last-good fallback</text>
+
+  <!-- ssm -->
+  <rect x="236" y="330" width="230" height="64" rx="12" class="aws"/>
+  <text x="250" y="350" class="k">SSM PARAMETER STORE</text>
+  <text x="250" y="372" class="t">Gemini key (encrypted)</text>
+
+  <!-- s3 results -->
+  <rect x="540" y="196" width="240" height="132" rx="12" class="aws"/>
+  <text x="554" y="216" class="k">AMAZON S3 · RESULTS</text>
+  <text x="554" y="238" class="t">latest/ + history/</text>
+  <text x="554" y="260" class="s">latest/wind: grids, 2 models</text>
+  <text x="554" y="278" class="s">latest/results: per city</text>
+  <text x="554" y="296" class="s">history/date/hour: every alert</text>
+  <text x="554" y="314" class="s">+ NASA fires each hour</text>
+
+  <!-- pipeline -->
+  <rect x="540" y="420" width="240" height="86" rx="12" class="aws"/>
+  <text x="554" y="440" class="k">AWS LAMBDA · PIPELINE</text>
+  <text x="554" y="462" class="t">Hourly job, 8 cities</text>
+  <text x="554" y="482" class="s">air · Smoke Trail · smoke alert</text>
+
+  <!-- scheduler -->
+  <rect x="236" y="430" width="230" height="66" rx="12" class="aws"/>
+  <text x="250" y="450" class="k">EVENTBRIDGE SCHEDULER</text>
+  <text x="250" y="474" class="t">rate(1 hour)</text>
+
+  <!-- cloudwatch -->
+  <rect x="236" y="534" width="544" height="60" rx="12" class="aws"/>
+  <text x="250" y="554" class="k">AMAZON CLOUDWATCH</text>
+  <text x="250" y="576" class="s"><tspan class="t" font-size="14">Logs + alarms</tspan>   from both Lambdas · alerts if the pipeline fails or stops, or the API errors</text>
+
+  <!-- external -->
+  <text x="850" y="104" class="kx">OUTSIDE DATA</text>
+  <rect x="850" y="116" width="170" height="74" rx="12" class="ext"/>
+  <text x="864" y="142" class="t">Open-Meteo</text>
+  <text x="864" y="162" class="s">air quality (CAMS)</text>
+  <text x="864" y="178" class="s">winds: best match + GFS</text>
+  <rect x="850" y="206" width="170" height="60" rx="12" class="ext"/>
+  <text x="864" y="232" class="t">NASA FIRMS</text>
+  <text x="864" y="250" class="s">satellite fire detections</text>
+  <rect x="850" y="282" width="170" height="60" rx="12" class="ext"/>
+  <text x="864" y="308" class="t">Google Gemini</text>
+  <text x="864" y="326" class="s">wording + Punjabi speech</text>
+
+  <!-- arrows -->
+  <path d="M174,243 L232,243" class="line"/>
+  <text x="180" y="234" class="lbl">HTTPS</text>
+  <path d="M120,200 C120,140 180,123 232,123" class="dash"/>
+  <path d="M351,162 L351,192" class="dash"/>
+  <path d="M466,226 L536,226" class="line"/>
+  <text x="472" y="218" class="lbl">reads grids</text>
+  <path d="M351,330 L351,296" class="line"/>
+  <path d="M466,463 L536,463" class="line"/>
+  <text x="474" y="455" class="lbl">invokes</text>
+  <path d="M660,420 L660,332" class="line"/>
+  <text x="668" y="384" class="lbl">writes</text>
+  <!-- outside-data bracket: everything to its right is called over the internet -->
+  <path d="M832,124 L832,336" stroke="#94A3B8" stroke-width="2" fill="none"/>
+  <path d="M466,206 C492,172 520,172 548,172 L828,172" class="dash"/>
+  <text x="560" y="164" class="lbl">live calls: other cities, Gemini, fallback</text>
+  <path d="M780,463 L806,463 C822,463 828,450 828,330" class="line"/>
+  <text x="790" y="402" class="lbl">fetches</text>
+</svg>
