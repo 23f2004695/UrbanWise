@@ -18,3 +18,7 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Deploy secrets and build output
+infra/.origin-secret
+infra/build/

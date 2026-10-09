@@ -180,3 +180,15 @@ def test_total_limit_caps_everyone_together(client, monkeypatch):
                          headers={"X-Forwarded-For": f"203.0.113.{i}"}).status_code for i in range(5)]
     assert codes == [200, 200, 200, 429, 429]
     assert "busy" in client.post("/api/speak", json={"text": "x"}).get_json()["error"]
+
+
+def test_origin_secret_blocks_direct_calls(client, monkeypatch):
+    monkeypatch.setattr(app_module, "ORIGIN_SECRET", "s3cret")
+    assert client.get("/api/health").status_code == 403
+    assert client.get("/api/health", headers={"X-Origin-Verify": "wrong"}).status_code == 403
+    assert client.get("/api/health", headers={"X-Origin-Verify": "s3cret"}).status_code == 200
+
+
+def test_no_origin_secret_locally(client):
+    assert app_module.ORIGIN_SECRET == ""
+    assert client.get("/api/health").status_code == 200

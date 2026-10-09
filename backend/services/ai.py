@@ -84,10 +84,23 @@ class AIUnavailable(Exception):
     """No model produced a usable answer."""
 
 
+def _api_key():
+    """From .env locally; on AWS from SSM Parameter Store (GEMINI_KEY_PARAM)."""
+    key = os.getenv("GEMINI_API_KEY")
+    param = os.getenv("GEMINI_KEY_PARAM")
+    if key or not param:
+        return key
+    try:
+        import boto3  # provided by the Lambda runtime
+        return boto3.client("ssm").get_parameter(Name=param, WithDecryption=True)["Parameter"]["Value"]
+    except Exception as exc:
+        raise AIUnavailable(f"Couldn't read the Gemini key from SSM: {exc}") from exc
+
+
 def _get_client():
     global _client
     if _client is None:
-        key = os.getenv("GEMINI_API_KEY")
+        key = _api_key()
         if not key:
             raise AIUnavailable("GEMINI_API_KEY is not set")
         from google import genai

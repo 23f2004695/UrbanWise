@@ -1,3 +1,4 @@
+import hmac
 import os
 import re
 from datetime import date, timedelta
@@ -40,6 +41,19 @@ TOTAL_LIMITS = {
 # (0 locally; set on deploy). Anything further left was sent by the visitor
 # and can be faked, so it's never used.
 TRUSTED_PROXIES = int(os.getenv("TRUSTED_PROXIES") or 0)
+
+
+# On AWS, CloudFront adds this secret header; requests without it didn't come
+# through CloudFront (e.g. someone calling the Lambda URL directly) and are refused.
+ORIGIN_SECRET = os.getenv("ORIGIN_SECRET") or ""
+
+
+@app.before_request
+def _only_via_cloudfront():
+    if ORIGIN_SECRET and not hmac.compare_digest(
+            request.headers.get("X-Origin-Verify", ""), ORIGIN_SECRET):
+        return jsonify(error="Forbidden"), 403
+    return None
 
 
 def _client_id():
