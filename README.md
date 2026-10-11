@@ -90,7 +90,29 @@ UrbanWise gives estimates for planning, not medical advice. The full method, ass
 - **Data**: Open-Meteo (air quality, winds, geocoding), NASA FIRMS
 - **AWS**: everything is in [infra/template.yaml](infra/template.yaml) and deployed with `infra/deploy.sh`
 
-![UrbanWise architecture on AWS](docs/architecture.svg)
+```mermaid
+flowchart LR
+    user([Browser / phone]) -->|HTTPS| api
+
+    subgraph aws [AWS ap-south-1]
+        ssm[(SSM Parameter Store<br/>Gemini key)] --> api[Lambda: API + website<br/>Flask via Lambda Web Adapter]
+        api -->|reads wind grids| s3[(S3<br/>wind grids, results, history)]
+        sched[EventBridge Scheduler<br/>every hour] --> pipe[Lambda: pipeline<br/>8 cities]
+        pipe -->|writes| s3
+        api -.-> cw[CloudWatch<br/>logs + alarms]
+        pipe -.-> cw
+    end
+
+    s3 ~~~ ext
+    api --> ext
+    pipe --> ext
+
+    subgraph ext [Outside data]
+        om[Open-Meteo<br/>air quality + winds]
+        firms[NASA FIRMS<br/>fire detections]
+        gem[Google Gemini<br/>wording + speech]
+    end
+```
 
 - **Lambda** runs the Flask API (through the Lambda Web Adapter) and, for now, serves the site on its function URL.
 - **EventBridge Scheduler** runs a second **Lambda** every hour. It fetches the wind grids for the main cities from both weather models, so visitors don't each hit Open-Meteo, and computes their air, Smoke Trail and smoke alert.
